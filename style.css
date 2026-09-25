@@ -1,43 +1,207 @@
+/* ============================================================
+   RETRO COLOR PALETTE
+   ============================================================ */
 :root {
+  --retro-cream: #F5E6C8;
+  --retro-navy: #1A1A2E;
+  --retro-red: #E63946;
+  --retro-yellow: #FFD93D;
+  --retro-pink: #FF6B9D;
+  --retro-green: #06D6A0;
+  --retro-purple: #9D4EDD;
+  --retro-blue: #4CC9F0;
+  --retro-black: #0A0A0A;
   --cream-bg: #FAF8F5;
-  --cream-card: #FFFFFF;
   --cream-border: #E8E2D9;
-  --cream-text-dark: #1C1917;
-  --cream-text-muted: #78716C;
-  --accent: #D97706;
 }
 
+/* ============================================================
+   BASE
+   ============================================================ */
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #090D16;
-  color: #F8FAFC;
+  background-color: var(--retro-navy);
+  color: var(--retro-black);
 }
 
-/* ===== FONT FAMILIES ===== */
+.retro-body {
+  background: var(--retro-navy);
+}
+
+.bg-retro-cream { background-color: var(--retro-cream); }
+.bg-retro-navy { background-color: var(--retro-navy); }
+.bg-retro-red { background-color: var(--retro-red); }
+.bg-retro-yellow { background-color: var(--retro-yellow); }
+.bg-retro-pink { background-color: var(--retro-pink); }
+.bg-retro-green { background-color: var(--retro-green); }
+
+.text-retro-yellow { color: var(--retro-yellow); }
+
+/* ============================================================
+   RETRO SHADOWS (chunky black offset)
+   ============================================================ */
+.shadow-retro {
+  box-shadow: 4px 4px 0 0 #000;
+}
+.shadow-retro-lg {
+  box-shadow: 8px 8px 0 0 #000;
+}
+
+/* ============================================================
+   RETRO FONTS
+   ============================================================ */
+.font-retro-display { font-family: 'Bungee', sans-serif; letter-spacing: 0.02em; }
+.font-mono-retro { font-family: 'DM Mono', monospace; letter-spacing: 0.05em; }
 .font-sans-clean { font-family: 'Inter', sans-serif; }
 .font-serif-elegant { font-family: 'Playfair Display', serif; }
 .font-handwriting { font-family: 'Caveat', cursive; }
 .font-modern-display { font-family: 'Space Grotesk', sans-serif; }
 .font-cinzel { font-family: 'Cinzel', serif; }
 
-/* ===== SCROLLBAR ===== */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #1E293B; }
-::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+/* ============================================================
+   RETRO BUTTONS
+   ============================================================ */
+.retro-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #000;
+  background: var(--retro-cream);
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 0 #000;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+.retro-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 0 #000;
+}
+.retro-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 #000;
+}
+.retro-btn-yellow { background: var(--retro-yellow); }
+.retro-btn-red { background: var(--retro-red); color: #fff; }
+.retro-btn-green { background: var(--retro-green); }
+.retro-btn-pink { background: var(--retro-pink); color: #fff; }
 
-/* ===== CREAMY CANVAS ===== */
+/* ============================================================
+   RETRO INPUTS
+   ============================================================ */
+.retro-input, .retro-select {
+  width: 100%;
+  background: #fff;
+  border: 3px solid #000;
+  padding: 0.6rem 0.75rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  color: #000;
+  outline: none;
+  box-shadow: 2px 2px 0 0 #000;
+  transition: all 0.15s ease;
+}
+.retro-input:focus, .retro-select:focus {
+  background: var(--retro-yellow);
+  box-shadow: 3px 3px 0 0 #000;
+  transform: translate(-1px, -1px);
+}
+.retro-input::placeholder {
+  color: rgba(0,0,0,0.35);
+}
+
+.retro-input-sm, .retro-select-sm {
+  width: 100%;
+  background: #fff;
+  border: 3px solid #000;
+  padding: 0.4rem 0.5rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  color: #000;
+  outline: none;
+  box-shadow: 2px 2px 0 0 #000;
+}
+.retro-input-sm:focus, .retro-select-sm:focus {
+  background: var(--retro-yellow);
+}
+
+select.retro-select, select.retro-select-sm {
+  cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #000 50%), linear-gradient(135deg, #000 50%, transparent 50%);
+  background-position: calc(100% - 16px) center, calc(100% - 10px) center;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 28px;
+}
+
+/* ============================================================
+   SCROLLBAR (retro)
+   ============================================================ */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--retro-cream); border-left: 2px solid #000; }
+::-webkit-scrollbar-thumb { background: var(--retro-red); border: 2px solid #000; }
+::-webkit-scrollbar-thumb:hover { background: var(--retro-pink); }
+
+/* ============================================================
+   CREAMY CANVAS (with retro dot pattern)
+   ============================================================ */
 .creamy-canvas {
   background-color: var(--cream-bg);
-  background-image: radial-gradient(#E2DCD2 1.2px, transparent 1.2px);
-  background-size: 20px 20px;
+  background-image: radial-gradient(#C9BFA8 1.5px, transparent 1.5px);
+  background-size: 18px 18px;
 }
 
-/* ===== PHOTO FRAME BACKGROUND (empty space e sundor gradient) ===== */
+/* ============================================================
+   PHOTO FRAME BACKGROUND
+   ============================================================ */
 .photo-frame-bg {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f172a 100%);
+  background:
+    repeating-linear-gradient(45deg, #0A0A0A 0, #0A0A0A 10px, #1A1A2E 10px, #1A1A2E 20px);
 }
 
-/* ===== LETTER ANIMATIONS (per-letter) ===== */
+/* ============================================================
+   VHS SCANLINES OVERLAY
+   ============================================================ */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.08),
+    rgba(0, 0, 0, 0.08) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+}
+
+.vhs-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,217,61,0.03) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(230,57,70,0.03) 0%, transparent 40%);
+  animation: vhsFlicker 0.15s infinite;
+}
+
+@keyframes vhsFlicker {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; }
+}
+
+/* ============================================================
+   LETTER ANIMATIONS
+   ============================================================ */
 @keyframes letterFadeIn {
   0% { opacity: 0; transform: translateY(12px); }
   100% { opacity: 1; transform: translateY(0); }
@@ -58,36 +222,38 @@ body {
 }
 
 .anim-letter-fade {
-  display: inline-block;
-  opacity: 0;
+  display: inline-block; opacity: 0;
   animation: letterFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 .anim-letter-slide {
-  display: inline-block;
-  opacity: 0;
+  display: inline-block; opacity: 0;
   animation: letterSlideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 .anim-letter-bounce {
-  display: inline-block;
-  opacity: 0;
+  display: inline-block; opacity: 0;
   animation: letterBounce 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 .anim-letter-glow {
-  display: inline-block;
-  opacity: 0;
+  display: inline-block; opacity: 0;
   animation: letterGlow 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ===== TYPEWRITER CURSOR ===== */
+/* ============================================================
+   TYPEWRITER CURSOR
+   ============================================================ */
 .typewriter-cursor::after {
-  content: '|';
+  content: '▊';
   animation: blink 0.7s infinite;
-  color: var(--accent);
+  color: var(--retro-red);
   font-weight: bold;
   margin-left: 2px;
 }
-
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
+
+/* ============================================================
+   UTILITY: border-3
+   ============================================================ */
+.border-3 { border-width: 3px; }
