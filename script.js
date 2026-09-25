@@ -755,7 +755,8 @@ function resetPreview() {
   previewImageBlur.classList.add('hidden');
   previewImagePlaceholder.classList.remove('hidden');
   previewTextContainer.innerHTML = '<span class="text-black/40 italic text-sm font-mono-retro">SELECT A SLIDE...</span>';
-  previewTextContainer.style.transform = 'translateY(0)';
+  const parentCanvas = previewTextContainer.closest('.creamy-canvas');
+  if (parentCanvas) parentCanvas.scrollTop = 0;
   applyCanvasBg('#FAF8F5');
 }
 
@@ -778,39 +779,33 @@ function updateLivePreview(slide) {
 /* ============================================================
    🎬 PER-LETTER ANIMATION ENGINE
    ✅ Line-by-line typewriter
-   ✅ Smart auto-scroll (like Notepad / VS Code)
-   ✅ Newest line always visible
-   ✅ Smooth scroll — no jump
+   ✅ Terminal-style auto-scroll: the PARENT (.creamy-canvas)
+      scrolls natively via scrollTop, the newest line is always
+      kept in view, and older lines glide up out of frame.
    ============================================================ */
 function renderAnimatedText(slide, container) {
   if (typewriterTimeout) clearTimeout(typewriterTimeout);
   letterTimeouts.forEach(t => clearTimeout(t));
   letterTimeouts = [];
 
-  // Parent canvas — bounds enforce
+  // The scrollable "screen" — this is what auto-scrolls, not the text itself
   const parentCanvas = container.closest('.creamy-canvas');
   if (parentCanvas) {
-    parentCanvas.style.overflow = 'hidden';
+    parentCanvas.style.overflowY = 'auto';
+    parentCanvas.style.overflowX = 'hidden';
     parentCanvas.style.position = 'relative';
-    parentCanvas.style.display = 'flex';
-    parentCanvas.style.flexDirection = 'column';
-    parentCanvas.style.justifyContent = 'flex-start';
-    parentCanvas.style.alignItems = 'center';
-    parentCanvas.style.boxSizing = 'border-box';
+    parentCanvas.scrollTop = 0;
   }
 
-  // Container reset
+  // Container reset — free to grow to whatever height the text needs
   container.innerHTML = '';
   container.className = `w-full ${slide.alignment} ${slide.fontFamily} ${slide.fontSize} leading-relaxed tracking-tight`;
   container.style.color = slide.textColor;
-  container.style.transform = 'translateY(0px)';
-  container.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
   container.style.maxWidth = '100%';
   container.style.wordBreak = 'break-word';
   container.style.overflowWrap = 'break-word';
   container.style.padding = '0';
   container.style.boxSizing = 'border-box';
-  container.style.willChange = 'transform';
 
   const text = slide.text;
   if (!text.trim()) {
@@ -820,19 +815,12 @@ function renderAnimatedText(slide, container) {
 
   const lines = text.split('\n');
 
-  // ✅ Helper: keep newest line visible by scrolling up
+  // ✅ Keep the newest content pinned to the bottom of the visible screen.
+  // Native scrollTop is used instead of manual transforms — much more
+  // reliable across browsers and content sizes (short quotes or long code).
   function keepNewestVisible() {
     if (!parentCanvas) return;
-    const visibleH = parentCanvas.clientHeight;
-    const contentH = container.scrollHeight;
-    const bottomPadding = 30;
-
-    if (contentH > visibleH - bottomPadding) {
-      const overflow = contentH - visibleH + bottomPadding;
-      container.style.transform = `translateY(-${overflow}px)`;
-    } else {
-      container.style.transform = 'translateY(0px)';
-    }
+    parentCanvas.scrollTop = parentCanvas.scrollHeight;
   }
 
   // ═══ TYPEWRITER MODE ═══
