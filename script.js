@@ -305,6 +305,7 @@ let isPaused = false;
 let typewriterTimeout = null;
 let letterTimeouts = [];
 let idleTimer = null;
+let scrollAnimationId = null;
 
 /* ============================================================
    DOM ELEMENTS
@@ -358,7 +359,7 @@ const previewPanel = document.getElementById('previewPanel');
 
 const canvasColorGrid = document.getElementById('canvasColorGrid');
 
-// ✅ DOWNLOAD ELEMENTS
+// DOWNLOAD ELEMENTS
 const downloadBtn = document.getElementById('downloadBtn');
 const downloadMenu = document.getElementById('downloadMenu');
 const downloadModal = document.getElementById('downloadModal');
@@ -487,7 +488,6 @@ function setupEventListeners() {
   nextSlideBtn.addEventListener('click', showNextSlide);
   clearAllBtn.addEventListener('click', clearAllSlides);
 
-  // ✅ Download menu toggle
   downloadBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     downloadMenu.classList.toggle('hidden');
@@ -603,7 +603,7 @@ function renderSlideList() {
         : 'bg-white border-black hover:bg-retro-cream'
     }`;
 
-    const previewText = (slide.text || 'No text').replace(/\n/g, ' ');
+    const previewText = (slide.text || 'No text').replace(/\n/g, ' ').substring(0, 40);
 
     slideEl.innerHTML = `
       <div class="w-10 h-10 border-2 border-black bg-black overflow-hidden shrink-0">
@@ -721,6 +721,7 @@ function resetPreview() {
   previewImageBlur.classList.add('hidden');
   previewImagePlaceholder.classList.remove('hidden');
   previewTextContainer.innerHTML = '<span class="text-black/40 italic text-sm font-mono-retro">SELECT A SLIDE...</span>';
+  previewTextContainer.style.transform = 'translateY(0)';
   applyCanvasBg('#FAF8F5');
 }
 
@@ -741,16 +742,57 @@ function updateLivePreview(slide) {
 }
 
 /* ============================================================
-   PER-LETTER ANIMATION ENGINE (with LINE BREAK support)
+   🎯 AUTO-SCROLL HELPER
+   Container er bhitore text jodi overflow hoy, tahole
+   auto-scroll kore niche theke upor e uthte thakbe
+   ============================================================ */
+function setupAutoScroll(contentEl) {
+  const wrapper = contentEl.closest('.creamy-canvas');
+  if (!wrapper) return;
+
+  wrapper.style.overflow = 'hidden';
+  wrapper.style.position = 'relative';
+
+  // Reset transform
+  contentEl.style.transition = 'none';
+  contentEl.style.transform = 'translateY(0px)';
+
+  // Small delay then measure + apply
+  setTimeout(() => {
+    const wrapperH = wrapper.clientHeight;
+    const contentH = contentEl.scrollHeight;
+
+    // Padding accounting
+    const paddingOffset = 40;
+
+    if (contentH <= wrapperH - paddingOffset) {
+      // Content fit kore — scroll lagbe na
+      contentEl.style.transform = 'translateY(0px)';
+      contentEl.style.transition = 'transform 0.3s ease-out';
+      return;
+    }
+
+    // Content beshi — auto-scroll to bottom (nicher text age dekhay)
+    const overflow = contentH - wrapperH + paddingOffset;
+    contentEl.style.transition = 'transform 0.3s ease-out';
+    contentEl.style.transform = `translateY(-${overflow}px)`;
+  }, 100);
+}
+
+/* ============================================================
+   PER-LETTER ANIMATION ENGINE (with LINE BREAK + AUTO-SCROLL)
    ============================================================ */
 function renderAnimatedText(slide, container) {
   if (typewriterTimeout) clearTimeout(typewriterTimeout);
   letterTimeouts.forEach(t => clearTimeout(t));
   letterTimeouts = [];
+  if (scrollAnimationId) cancelAnimationFrame(scrollAnimationId);
 
   container.innerHTML = '';
   container.className = `w-full max-w-2xl ${slide.alignment} ${slide.fontFamily} ${slide.fontSize} leading-relaxed tracking-tight`;
   container.style.color = slide.textColor;
+  container.style.transform = 'translateY(0px)';
+  container.style.transition = 'none';
 
   const text = slide.text;
   if (!text.trim()) {
@@ -780,9 +822,15 @@ function renderAnimatedText(slide, container) {
           if (char !== ' ') soundFx.playTypewriterKey();
         }
         charIndex++;
+
+        // ✅ Auto-scroll continuously as chars type
+        autoScrollLive(container);
+
         typewriterTimeout = setTimeout(typeChar, 50);
       } else {
         typewriterTimeout = setTimeout(() => cursorSpan.remove(), 2000);
+        // Final scroll to top (jate user puro text dekhte pay)
+        smoothScrollToTop(container);
       }
     }
     typeChar();
@@ -832,6 +880,10 @@ function renderAnimatedText(slide, container) {
     globalLetterIndex++;
   });
 
+  // ═══ Auto-scroll for fade/slide/bounce/glow ═══
+  const totalDuration = globalLetterIndex * 50 + 500;
+  smoothScrollLoop(container, totalDuration);
+
   // ═══ Sound sync per letter ═══
   let soundIndex = 0;
   lines.forEach((line) => {
@@ -855,6 +907,80 @@ function renderAnimatedText(slide, container) {
 }
 
 /* ============================================================
+   AUTO-SCROLL ENGINE
+   Content beshi hole dynamically transform kore upor e uthai
+   ============================================================ */
+function autoScrollLive(contentEl) {
+  const wrapper = contentEl.closest('.creamy-canvas');
+  if (!wrapper) return;
+
+  const wrapperH = wrapper.clientHeight;
+  const contentH = contentEl.scrollHeight;
+
+  const paddingOffset = 40;
+  if (contentH <= wrapperH - paddingOffset) {
+    contentEl.style.transform = 'translateY(0px)';
+    return;
+  }
+
+  const overflow = contentH - wrapperH + paddingOffset;
+  contentEl.style.transition = 'transform 0.1s linear';
+  contentEl.style.transform = `translateY(-${overflow}px)`;
+}
+
+function smoothScrollLoop(contentEl, totalDuration) {
+  const startTime = performance.now();
+
+  function step(now) {
+    const elapsed = now - startTime;
+    autoScrollLive(contentEl);
+
+    if (elapsed < totalDuration) {
+      scrollAnimationId = requestAnimationFrame(step);
+    } else {
+      // Animation sesh — final scroll to bottom dekhay
+      autoScrollLive(contentEl);
+    }
+  }
+  scrollAnimationId = requestAnimationFrame(step);
+}
+
+function smoothScrollToTop(contentEl) {
+  const wrapper = contentEl.closest('.creamy-canvas');
+  if (!wrapper) return;
+
+  const wrapperH = wrapper.clientHeight;
+  const contentH = contentEl.scrollHeight;
+  const paddingOffset = 40;
+
+  if (contentH <= wrapperH - paddingOffset) return;
+
+  const overflow = contentH - wrapperH + paddingOffset;
+
+  // Auto-scroll up slowly jate user shob line dekhbe
+  const totalScrollTime = 6000; // 6 seconds
+  const startTime = performance.now();
+
+  function step(now) {
+    const elapsed = now - startTime;
+    const p = Math.min(elapsed / totalScrollTime, 1);
+    const eased = easeOutCubic(p);
+
+    // Start from bottom (overflow position), end at top (0)
+    // Actually: as user types, we scroll DOWN so newest text is visible.
+    // After typing, we scroll UP to show beginning.
+    const currentY = -overflow * (1 - eased);
+    contentEl.style.transition = 'none';
+    contentEl.style.transform = `translateY(${currentY}px)`;
+
+    if (p < 1) {
+      requestAnimationFrame(step);
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+/* ============================================================
    PRESENTATION MODE
    ============================================================ */
 function startPresentation() {
@@ -875,6 +1001,7 @@ function stopPresentation() {
   clearTimeout(presentationTimer);
   clearInterval(progressTimer);
   clearTimeout(idleTimer);
+  if (scrollAnimationId) cancelAnimationFrame(scrollAnimationId);
   letterTimeouts.forEach(t => clearTimeout(t));
   letterTimeouts = [];
   presentationModal.classList.add('hidden');
@@ -960,7 +1087,7 @@ function resetIdleTimer() {
 }
 
 /* ============================================================
-   ✅ DOWNLOAD: PNG (INSTANT — no wait)
+   ✅ DOWNLOAD: PNG (INSTANT)
    ============================================================ */
 async function handleDownloadPNG() {
   const slide = getActiveSlide();
@@ -979,7 +1106,6 @@ async function handleDownloadPNG() {
     canvas.height = 720;
     const ctx = canvas.getContext('2d');
 
-    // progress = 1 means fully rendered (no animation)
     drawSlideOnCanvas(ctx, canvas.width, canvas.height, img, slide, 1);
 
     canvas.toBlob((blob) => {
@@ -1058,7 +1184,6 @@ async function recordSlideToVideo(slide) {
   canvas.height = HEIGHT;
   const ctx = canvas.getContext('2d');
 
-  // Audio routing: tap masterGain into a MediaStreamDest
   const audioDest = soundFx.ctx.createMediaStreamDestination();
   soundFx.masterGain.connect(audioDest);
 
@@ -1068,7 +1193,6 @@ async function recordSlideToVideo(slide) {
     ...audioDest.stream.getAudioTracks()
   ]);
 
-  // Pick supported MIME type
   let mimeType = 'video/webm;codecs=vp9,opus';
   if (!MediaRecorder.isTypeSupported(mimeType)) {
     mimeType = 'video/webm;codecs=vp8,opus';
@@ -1109,7 +1233,6 @@ async function recordSlideToVideo(slide) {
 
     const startTime = performance.now();
 
-    // ── Schedule sounds to play during recording ──
     const lines = slide.text.split('\n');
     const soundTimeouts = [];
 
@@ -1172,7 +1295,7 @@ async function recordSlideToVideo(slide) {
 
 /* ============================================================
    CANVAS RENDERING (shared by PNG + Video export)
-   progress: 0 → 1  (0 = start of animation, 1 = fully visible)
+   ✅ AUTO-SCROLL for long text
    ============================================================ */
 function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
   const photoH = H / 2;
@@ -1213,7 +1336,7 @@ function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
     }
   }
 
-  // ── 4. Text ──
+  // ── 4. Text setup ──
   const fontFamilyMap = {
     'font-serif-elegant': '"Playfair Display", serif',
     'font-sans-clean': 'Inter, sans-serif',
@@ -1243,15 +1366,35 @@ function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
   const lineHeight = fontSize * 1.5;
   const lines = slide.text.split('\n');
   const totalTextH = lines.length * lineHeight;
-  const textAreaCenterY = photoH + (H - photoH) / 2;
-  let currentY = textAreaCenterY - totalTextH / 2 + lineHeight / 2;
 
-  const letterDelay = 50; // ms
-  const letterDuration = 0.45; // sec
+  // ✅ AUTO-SCROLL for canvas
+  const textAreaTop = photoH + 20;
+  const textAreaBottom = H - 20;
+  const textAreaCenterY = photoH + (H - photoH) / 2;
+  const availableH = textAreaBottom - textAreaTop;
+
+  let scrollOffset = 0;
+  if (totalTextH > availableH) {
+    const maxScroll = totalTextH - availableH + 20;
+    // Scroll progresses from progress 0.5 → 1
+    const scrollProgress = Math.max(0, Math.min(1, (progress - 0.5) / 0.5));
+    const eased = easeOutCubic(scrollProgress);
+    scrollOffset = maxScroll * eased;
+  }
+
+  let currentY = textAreaCenterY - totalTextH / 2 + lineHeight / 2 - scrollOffset;
+
+  const letterDelay = 50;
+  const letterDuration = 0.45;
   const currentTimeSec = progress * slide.duration;
 
-  // Global letter index across all lines
   let charGlobalIdx = 0;
+
+  // ✅ Clip to text area so overflow doesn't bleed
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, textAreaTop, W, availableH);
+  ctx.clip();
 
   lines.forEach((line) => {
     const words = line.split(' ');
@@ -1321,9 +1464,11 @@ function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
       });
     });
 
-    currentLineY: currentY += lineHeight;
-    charGlobalIdx++; // line break counts as one
+    currentY += lineHeight;
+    charGlobalIdx++;
   });
+
+  ctx.restore();
 }
 
 /* ============================================================
