@@ -39,7 +39,6 @@
         <span class="hidden sm:inline">CLEAR</span>
       </button>
 
-      <!-- ✅ DOWNLOAD with dropdown -->
       <div class="relative">
         <button id="downloadBtn" class="retro-btn retro-btn-pink">
           <i class="fa-solid fa-download"></i>
@@ -180,12 +179,17 @@
           </div>
         </div>
 
+        <!-- ✅ TIMING SECTION (Updated with Auto/Manual dropdown) -->
         <div class="space-y-3 pt-3 border-t-4 border-black">
           <span class="text-[10px] font-mono-retro font-bold text-black uppercase tracking-wider block bg-retro-pink px-2 py-1 border-2 border-black inline-block">TIMING</span>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-[10px] text-black font-mono-retro font-bold block mb-1">DURATION (S)</label>
-              <input type="number" id="durationInput" min="2" max="60" value="5" class="retro-input-sm">
+              <label class="text-[10px] text-black font-mono-retro font-bold block mb-1">DURATION</label>
+              <select id="durationModeSelect" class="retro-select-sm mb-1">
+                <option value="auto" selected>Auto (By Text)</option>
+                <option value="manual">Manual</option>
+              </select>
+              <input type="number" id="durationInput" min="2" max="120" value="5" class="retro-input-sm" disabled>
             </div>
             <div>
               <label class="text-[10px] text-black font-mono-retro font-bold block mb-1">PHOTO FIT</label>
