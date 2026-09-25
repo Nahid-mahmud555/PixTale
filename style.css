@@ -19,6 +19,11 @@ body {
   font-family: 'Inter', sans-serif;
   background-color: var(--retro-navy);
   color: var(--retro-black);
+  overflow-x: hidden;
+}
+
+html, body {
+  overflow-x: hidden;
 }
 
 .retro-body { background: var(--retro-navy); }
@@ -64,6 +69,7 @@ body {
 }
 .retro-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 0 #000; }
 .retro-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 0 #000; }
+.retro-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .retro-btn-yellow { background: var(--retro-yellow); }
 .retro-btn-red { background: var(--retro-red); color: #fff; }
 .retro-btn-green { background: var(--retro-green); }
@@ -123,13 +129,36 @@ select.retro-select, select.retro-select-sm {
 ::-webkit-scrollbar-thumb:hover { background: var(--retro-pink); }
 
 /* ============================================================
-   CREAMY CANVAS
+   ✅ CREAMY CANVAS — text always inside frame
    ============================================================ */
 .creamy-canvas {
   background-color: var(--cream-bg);
   background-image: radial-gradient(#C9BFA8 1.5px, transparent 1.5px);
   background-size: 18px 18px;
   transition: background-color 0.3s ease;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* Text container — always fit within bounds */
+#previewTextContainer,
+#playerTextContainer {
+  max-height: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+#previewTextContainer *,
+#playerTextContainer * {
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
 }
 
 /* ============================================================
@@ -263,6 +292,37 @@ select.retro-select, select.retro-select-sm {
 }
 
 /* ============================================================
+   ✅ FULLSCREEN PRESENTATION — text scaling fix
+   ============================================================ */
+#presentationModal .creamy-canvas {
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  padding: 24px 32px !important;
+}
+
+#presentationModal #playerTextContainer {
+  max-height: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  margin: auto 0 !important;
+  padding: 0 !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  /* Auto-shrink font on smaller fullscreen */
+  font-size: clamp(0.9em, 2.5vw, 1.6em) !important;
+}
+
+#presentationModal #playerTextContainer * {
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
+}
+
+/* ============================================================
    ✅ FULLSCREEN AUTO-HIDE CONTROLS
    ============================================================ */
 .presentation-idle #playerTopBar,
@@ -275,4 +335,18 @@ select.retro-select, select.retro-select-sm {
 
 #playerTopBar, #playerProgressBar, #prevSlideBtn, #nextSlideBtn {
   transition: opacity 0.3s ease;
+}
+
+/* ============================================================
+   ✅ MOBILE RESPONSIVE — text scaling
+   ============================================================ */
+@media (max-width: 640px) {
+  #previewTextContainer,
+  #playerTextContainer {
+    font-size: 0.95em !important;
+  }
+
+  #presentationModal .creamy-canvas {
+    padding: 16px 20px !important;
+  }
 }
