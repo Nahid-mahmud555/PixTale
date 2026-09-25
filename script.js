@@ -22,14 +22,12 @@ class AudioSynthesizer {
 
   // ══════════════════════════════════════════════════════════
   // 🎯 TYPEWRITER CLICK — Mechanical keyboard key tap
-  // (CapCut / Premiere style: crisp, short, clicky)
   // ══════════════════════════════════════════════════════════
   playTypewriterKey() {
     if (!this.soundEnabled) return;
     this.init();
     const now = this.ctx.currentTime;
 
-    // Layer 1: High click (metallic)
     const click = this.ctx.createOscillator();
     const clickGain = this.ctx.createGain();
     click.type = 'square';
@@ -42,7 +40,6 @@ class AudioSynthesizer {
     click.start(now);
     click.stop(now + 0.02);
 
-    // Layer 2: Body thump (low meaty part)
     const thump = this.ctx.createOscillator();
     const thumpGain = this.ctx.createGain();
     thump.type = 'triangle';
@@ -55,7 +52,6 @@ class AudioSynthesizer {
     thump.start(now);
     thump.stop(now + 0.03);
 
-    // Layer 3: Noise burst (key release texture)
     const noise = this.ctx.createBufferSource();
     const noiseBuffer = this.ctx.createBuffer(1, 800, this.ctx.sampleRate);
     const data = noiseBuffer.getChannelData(0);
@@ -78,7 +74,6 @@ class AudioSynthesizer {
 
   // ══════════════════════════════════════════════════════════
   // 🎯 LETTER POP — Cute candy-pop sound
-  // (For fade/slide/bounce/glow animation letters)
   // ══════════════════════════════════════════════════════════
   playLetterPop() {
     if (!this.soundEnabled) return;
@@ -88,7 +83,6 @@ class AudioSynthesizer {
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sine';
-    // Random pitch for organic feel
     const basePitch = 700 + Math.random() * 500;
     osc.frequency.setValueAtTime(basePitch, now);
     osc.frequency.exponentialRampToValueAtTime(basePitch * 2, now + 0.04);
@@ -193,7 +187,6 @@ class AudioSynthesizer {
     this.init();
     const now = this.ctx.currentTime;
 
-    // Descending swoosh
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sawtooth';
@@ -268,6 +261,20 @@ class AudioSynthesizer {
 const soundFx = new AudioSynthesizer();
 
 /* ============================================================
+   🎨 CANVAS BACKGROUND COLORS (user-defined palette)
+   ============================================================ */
+const CANVAS_COLORS = [
+  { name: 'Cream (Default)', value: '#FAF8F5' },
+  { name: 'Sage',            value: '#BAC8B1' },
+  { name: 'Beige',           value: '#CCBEB1' },
+  { name: 'Gray',            value: '#CFCFCF' },
+  { name: 'Light Gray',      value: '#E6E6E6' },
+  { name: 'Olive',           value: '#B7C396' },
+  { name: 'Gold',            value: '#ECB914' },
+  { name: 'Honey',           value: '#F6D579' }
+];
+
+/* ============================================================
    STATE VARIABLES
    ============================================================ */
 let slides = [];
@@ -326,10 +333,14 @@ const slidesSidebar = document.getElementById('slidesSidebar');
 const customizerPanel = document.getElementById('customizerPanel');
 const previewPanel = document.getElementById('previewPanel');
 
+// ✅ NEW: Canvas color grid
+const canvasColorGrid = document.getElementById('canvasColorGrid');
+
 /* ============================================================
    INIT
    ============================================================ */
 window.addEventListener('DOMContentLoaded', () => {
+  renderCanvasColorSwatches();   // ✅ NEW
   addDemoSlide();
   setupEventListeners();
   setupMobileTabs();
@@ -346,11 +357,60 @@ function addDemoSlide() {
     alignment: 'text-center',
     textColor: '#1C1917',
     duration: 5,
-    objectFit: 'object-cover'
+    objectFit: 'object-cover',
+    canvasBg: '#FAF8F5'   // ✅ NEW
   };
   slides.push(demoSlide);
   renderSlideList();
   selectSlide(demoSlide.id);
+}
+
+/* ============================================================
+   🎨 CANVAS COLOR SWATCHES (render + click handler)
+   ============================================================ */
+function renderCanvasColorSwatches() {
+  if (!canvasColorGrid) return;
+  canvasColorGrid.innerHTML = '';
+
+  CANVAS_COLORS.forEach(color => {
+    const swatch = document.createElement('button');
+    swatch.type = 'button';
+    swatch.className = 'canvas-swatch';
+    swatch.style.backgroundColor = color.value;
+    swatch.title = color.name;
+    swatch.dataset.color = color.value;
+
+    swatch.addEventListener('click', () => {
+      const slide = getActiveSlide();
+      if (!slide) return;
+
+      slide.canvasBg = color.value;
+      soundFx.playUIClick();
+
+      // Active state update
+      document.querySelectorAll('.canvas-swatch').forEach(s => s.classList.remove('active'));
+      swatch.classList.add('active');
+
+      updateLivePreview(slide);
+    });
+
+    canvasColorGrid.appendChild(swatch);
+  });
+}
+
+/* ============================================================
+   🎨 APPLY CANVAS BACKGROUND TO PREVIEW + PLAYER
+   ============================================================ */
+function applyCanvasBg(color) {
+  const bgColor = color || '#FAF8F5';
+
+  // Preview text area
+  const previewCanvas = previewTextContainer.closest('.creamy-canvas');
+  if (previewCanvas) previewCanvas.style.backgroundColor = bgColor;
+
+  // Player text area
+  const playerCanvas = playerTextContainer.closest('.creamy-canvas');
+  if (playerCanvas) playerCanvas.style.backgroundColor = bgColor;
 }
 
 /* ============================================================
@@ -452,7 +512,8 @@ function handleFileUpload(e) {
         alignment: 'text-center',
         textColor: '#1C1917',
         duration: 5,
-        objectFit: 'object-cover'
+        objectFit: 'object-cover',
+        canvasBg: '#FAF8F5'   // ✅ NEW
       };
       slides.push(newSlide);
       renderSlideList();
@@ -552,6 +613,15 @@ function selectSlide(id) {
     }
   });
 
+  // ✅ NEW: Canvas color active mark koro
+  document.querySelectorAll('.canvas-swatch').forEach(s => {
+    if (s.dataset.color === slide.canvasBg) {
+      s.classList.add('active');
+    } else {
+      s.classList.remove('active');
+    }
+  });
+
   updateLivePreview(slide);
 }
 
@@ -599,6 +669,8 @@ function resetPreview() {
   previewImage.classList.add('hidden');
   previewImagePlaceholder.classList.remove('hidden');
   previewTextContainer.innerHTML = '<span class="text-black/40 italic text-sm font-mono-retro">SELECT A SLIDE...</span>';
+  // ✅ NEW: Reset canvas bg
+  applyCanvasBg('#FAF8F5');
 }
 
 function updateLivePreview(slide) {
@@ -607,6 +679,9 @@ function updateLivePreview(slide) {
   previewImage.className = `w-full h-full ${slide.objectFit} object-center transition-all duration-300`;
   previewImage.classList.remove('hidden');
   previewImagePlaceholder.classList.add('hidden');
+
+  // ✅ NEW: Canvas background apply koro
+  applyCanvasBg(slide.canvasBg);
 
   renderAnimatedText(slide, previewTextContainer);
 }
@@ -684,7 +759,7 @@ function renderAnimatedText(slide, container) {
     container.appendChild(wordWrapper);
   });
 
-  // ═══════ Sound sync per letter (different sound per animation) ═══════
+  // ═══════ Sound sync per letter ═══════
   let globalIndex = 0;
   words.forEach((word) => {
     word.split('').forEach(() => {
@@ -750,6 +825,9 @@ function playSlide(index) {
   playerImage.src = slide.imageUrl;
   playerImage.className = `w-full h-full ${slide.objectFit} object-center`;
   playerSlideCounter.textContent = `SLIDE ${index + 1} / ${slides.length}`;
+
+  // ✅ NEW: Canvas background apply koro player e
+  applyCanvasBg(slide.canvasBg);
 
   renderAnimatedText(slide, playerTextContainer);
 
