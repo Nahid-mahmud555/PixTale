@@ -325,6 +325,7 @@ const fontSizeSelect = document.getElementById('fontSizeSelect');
 const textColorPicker = document.getElementById('textColorPicker');
 const textColorHex = document.getElementById('textColorHex');
 const durationInput = document.getElementById('durationInput');
+const durationModeSelect = document.getElementById('durationModeSelect');
 const objectFitSelect = document.getElementById('objectFitSelect');
 const alignBtns = document.querySelectorAll('.align-btn');
 
@@ -389,6 +390,7 @@ function addDemoSlide() {
     alignment: 'text-center',
     textColor: '#1C1917',
     duration: 5,
+    durationMode: 'auto',
     objectFit: 'object-contain',
     canvasBg: '#FAF8F5'
   };
@@ -448,6 +450,15 @@ function setupEventListeners() {
   fontSizeSelect.addEventListener('change', updateActiveSlide);
   durationInput.addEventListener('change', updateActiveSlide);
   objectFitSelect.addEventListener('change', updateActiveSlide);
+
+  durationModeSelect.addEventListener('change', () => {
+    const slide = getActiveSlide();
+    if (!slide) return;
+    slide.durationMode = durationModeSelect.value;
+    durationInput.disabled = durationModeSelect.value === 'auto';
+    soundFx.playUIClick();
+    updateActiveSlide();
+  });
 
   textColorPicker.addEventListener('input', (e) => {
     textColorHex.textContent = e.target.value.toUpperCase();
@@ -562,6 +573,7 @@ function handleFileUpload(e) {
         alignment: 'text-center',
         textColor: '#1C1917',
         duration: 5,
+        durationMode: 'auto',
         objectFit: 'object-contain',
         canvasBg: '#FAF8F5'
       };
@@ -604,6 +616,7 @@ function renderSlideList() {
     }`;
 
     const previewText = (slide.text || 'No text').replace(/\n/g, ' ').substring(0, 40);
+    const effectiveDur = getEffectiveDuration(slide);
 
     slideEl.innerHTML = `
       <div class="w-10 h-10 border-2 border-black bg-black overflow-hidden shrink-0">
@@ -612,7 +625,7 @@ function renderSlideList() {
       <div class="flex-1 min-w-0">
         <div class="flex items-center justify-between">
           <span class="text-xs font-mono-retro font-bold text-black truncate">SLIDE ${idx + 1}</span>
-          <span class="text-[10px] text-black font-mono-retro font-bold bg-retro-pink text-white px-1.5 border border-black">${slide.duration}S</span>
+          <span class="text-[10px] text-black font-mono-retro font-bold bg-retro-pink text-white px-1.5 border border-black">${effectiveDur}S</span>
         </div>
         <p class="text-[11px] text-black/70 truncate mt-0.5 font-mono-retro">${previewText}</p>
       </div>
@@ -655,6 +668,8 @@ function selectSlide(id) {
   textColorPicker.value = slide.textColor;
   textColorHex.textContent = slide.textColor.toUpperCase();
   durationInput.value = slide.duration;
+  durationModeSelect.value = slide.durationMode || 'auto';
+  durationInput.disabled = (slide.durationMode || 'auto') === 'auto';
   objectFitSelect.value = slide.objectFit;
 
   alignBtns.forEach(btn => {
@@ -678,6 +693,40 @@ function selectSlide(id) {
 
 function getActiveSlide() { return slides.find(s => s.id === activeSlideId); }
 
+/* ============================================================
+   ⏱️ CALCULATE AUTO DURATION
+   ============================================================ */
+function calculateAutoDuration(slide) {
+  const text = slide.text || '';
+  const totalChars = text.replace(/\s/g, '').length;
+  const totalLines = text.split('\n').length;
+
+  let typingTime = 0;
+  if (slide.animation === 'typewriter') {
+    typingTime = text.length * 50;
+  } else {
+    typingTime = totalChars * 50 + 500;
+  }
+
+  // Reading time: ~25ms per char (comfortable)
+  let readingTime = totalChars * 25;
+  readingTime = Math.max(readingTime, 2000);
+
+  // Scroll padding for long text
+  const scrollPadding = totalLines > 8 ? 2000 : 0;
+
+  const totalMs = typingTime + readingTime + scrollPadding;
+
+  return Math.max(3, Math.min(90, Math.round(totalMs / 1000)));
+}
+
+function getEffectiveDuration(slide) {
+  if (slide.durationMode === 'manual') {
+    return slide.duration || 5;
+  }
+  return calculateAutoDuration(slide);
+}
+
 function updateActiveSlide() {
   const slide = getActiveSlide();
   if (!slide) return;
@@ -688,6 +737,7 @@ function updateActiveSlide() {
   slide.fontSize = fontSizeSelect.value;
   slide.textColor = textColorPicker.value;
   slide.duration = parseFloat(durationInput.value) || 5;
+  slide.durationMode = durationModeSelect.value;
   slide.objectFit = objectFitSelect.value;
 
   const activeAlignBtn = document.querySelector('.align-btn.active');
@@ -742,51 +792,21 @@ function updateLivePreview(slide) {
 }
 
 /* ============================================================
-   🎯 AUTO-SCROLL HELPER
-   Container er bhitore text jodi overflow hoy, tahole
-   auto-scroll kore niche theke upor e uthte thakbe
-   ============================================================ */
-function setupAutoScroll(contentEl) {
-  const wrapper = contentEl.closest('.creamy-canvas');
-  if (!wrapper) return;
-
-  wrapper.style.overflow = 'hidden';
-  wrapper.style.position = 'relative';
-
-  // Reset transform
-  contentEl.style.transition = 'none';
-  contentEl.style.transform = 'translateY(0px)';
-
-  // Small delay then measure + apply
-  setTimeout(() => {
-    const wrapperH = wrapper.clientHeight;
-    const contentH = contentEl.scrollHeight;
-
-    // Padding accounting
-    const paddingOffset = 40;
-
-    if (contentH <= wrapperH - paddingOffset) {
-      // Content fit kore — scroll lagbe na
-      contentEl.style.transform = 'translateY(0px)';
-      contentEl.style.transition = 'transform 0.3s ease-out';
-      return;
-    }
-
-    // Content beshi — auto-scroll to bottom (nicher text age dekhay)
-    const overflow = contentH - wrapperH + paddingOffset;
-    contentEl.style.transition = 'transform 0.3s ease-out';
-    contentEl.style.transform = `translateY(-${overflow}px)`;
-  }, 100);
-}
-
-/* ============================================================
-   PER-LETTER ANIMATION ENGINE (with LINE BREAK + AUTO-SCROLL)
+   PER-LETTER ANIMATION ENGINE
+   with LINE BREAK + SMART AUTO-SCROLL + AUTO-DURATION
    ============================================================ */
 function renderAnimatedText(slide, container) {
   if (typewriterTimeout) clearTimeout(typewriterTimeout);
   letterTimeouts.forEach(t => clearTimeout(t));
   letterTimeouts = [];
   if (scrollAnimationId) cancelAnimationFrame(scrollAnimationId);
+
+  // Container setup
+  const parentCanvas = container.closest('.creamy-canvas');
+  if (parentCanvas) {
+    parentCanvas.style.overflow = 'hidden';
+    parentCanvas.style.position = 'relative';
+  }
 
   container.innerHTML = '';
   container.className = `w-full max-w-2xl ${slide.alignment} ${slide.fontFamily} ${slide.fontSize} leading-relaxed tracking-tight`;
@@ -800,7 +820,6 @@ function renderAnimatedText(slide, container) {
     return;
   }
 
-  // ✅ Split by lines to preserve line breaks
   const lines = text.split('\n');
 
   // ═══ TYPEWRITER MODE ═══
@@ -812,6 +831,13 @@ function renderAnimatedText(slide, container) {
     container.appendChild(cursorSpan);
 
     let charIndex = 0;
+    const totalChars = text.length;
+
+    // Auto-duration based on text length
+    const effectiveDuration = getEffectiveDuration(slide);
+    const typeDuration = (totalChars * 50) / 1000;
+    const readingTimeSec = Math.max(effectiveDuration - typeDuration, 1);
+
     function typeChar() {
       if (charIndex < text.length) {
         const char = text.charAt(charIndex);
@@ -823,21 +849,26 @@ function renderAnimatedText(slide, container) {
         }
         charIndex++;
 
-        // ✅ Auto-scroll continuously as chars type
-        autoScrollLive(container);
+        // Auto-scroll: keep newest char visible
+        autoScrollToBottom(container, parentCanvas);
 
         typewriterTimeout = setTimeout(typeChar, 50);
       } else {
         typewriterTimeout = setTimeout(() => cursorSpan.remove(), 2000);
-        // Final scroll to top (jate user puro text dekhte pay)
-        smoothScrollToTop(container);
+
+        // Reading phase: smooth scroll back to top
+        if (readingTimeSec > 0.5) {
+          setTimeout(() => {
+            scrollToTopSmoothly(container, parentCanvas, readingTimeSec * 1000);
+          }, 800);
+        }
       }
     }
     typeChar();
     return;
   }
 
-  // ═══ OTHER MODES (line-by-line) ═══
+  // ═══ OTHER MODES (Fade / Slide / Bounce / Glow) ═══
   const animClassMap = {
     fade: 'anim-letter-fade',
     slide: 'anim-letter-slide',
@@ -880,11 +911,28 @@ function renderAnimatedText(slide, container) {
     globalLetterIndex++;
   });
 
-  // ═══ Auto-scroll for fade/slide/bounce/glow ═══
-  const totalDuration = globalLetterIndex * 50 + 500;
-  smoothScrollLoop(container, totalDuration);
+  // Auto-scroll during animation
+  const animationDuration = globalLetterIndex * 50 + 500;
+  const effectiveDuration = getEffectiveDuration(slide);
+  const readingTimeMs = Math.max((effectiveDuration * 1000) - animationDuration, 500);
 
-  // ═══ Sound sync per letter ═══
+  const scrollStart = performance.now();
+  function scrollLoop(now) {
+    const elapsed = now - scrollStart;
+    autoScrollToBottom(container, parentCanvas);
+
+    if (elapsed < animationDuration) {
+      scrollAnimationId = requestAnimationFrame(scrollLoop);
+    } else {
+      // Animation sesh — smooth scroll to top for reading
+      setTimeout(() => {
+        scrollToTopSmoothly(container, parentCanvas, readingTimeMs);
+      }, 300);
+    }
+  }
+  scrollAnimationId = requestAnimationFrame(scrollLoop);
+
+  // Sound sync per letter
   let soundIndex = 0;
   lines.forEach((line) => {
     line.split(' ').forEach((word) => {
@@ -907,77 +955,58 @@ function renderAnimatedText(slide, container) {
 }
 
 /* ============================================================
-   AUTO-SCROLL ENGINE
-   Content beshi hole dynamically transform kore upor e uthai
+   SMART AUTO-SCROLL HELPERS
    ============================================================ */
-function autoScrollLive(contentEl) {
-  const wrapper = contentEl.closest('.creamy-canvas');
-  if (!wrapper) return;
 
-  const wrapperH = wrapper.clientHeight;
+// Scroll to bottom — newest text visible
+function autoScrollToBottom(contentEl, wrapperEl) {
+  if (!wrapperEl) wrapperEl = contentEl.closest('.creamy-canvas');
+  if (!wrapperEl) return;
+
+  const wrapperH = wrapperEl.clientHeight;
   const contentH = contentEl.scrollHeight;
+  const padding = 40;
 
-  const paddingOffset = 40;
-  if (contentH <= wrapperH - paddingOffset) {
+  if (contentH <= wrapperH - padding) {
     contentEl.style.transform = 'translateY(0px)';
     return;
   }
 
-  const overflow = contentH - wrapperH + paddingOffset;
+  const overflow = contentH - wrapperH + padding;
   contentEl.style.transition = 'transform 0.1s linear';
   contentEl.style.transform = `translateY(-${overflow}px)`;
 }
 
-function smoothScrollLoop(contentEl, totalDuration) {
-  const startTime = performance.now();
+// Scroll to top smoothly (reading phase)
+function scrollToTopSmoothly(contentEl, wrapperEl, durationMs) {
+  if (!wrapperEl) wrapperEl = contentEl.closest('.creamy-canvas');
+  if (!wrapperEl) return;
 
-  function step(now) {
-    const elapsed = now - startTime;
-    autoScrollLive(contentEl);
-
-    if (elapsed < totalDuration) {
-      scrollAnimationId = requestAnimationFrame(step);
-    } else {
-      // Animation sesh — final scroll to bottom dekhay
-      autoScrollLive(contentEl);
-    }
-  }
-  scrollAnimationId = requestAnimationFrame(step);
-}
-
-function smoothScrollToTop(contentEl) {
-  const wrapper = contentEl.closest('.creamy-canvas');
-  if (!wrapper) return;
-
-  const wrapperH = wrapper.clientHeight;
+  const wrapperH = wrapperEl.clientHeight;
   const contentH = contentEl.scrollHeight;
-  const paddingOffset = 40;
+  const padding = 40;
 
-  if (contentH <= wrapperH - paddingOffset) return;
+  if (contentH <= wrapperH - padding) return;
 
-  const overflow = contentH - wrapperH + paddingOffset;
-
-  // Auto-scroll up slowly jate user shob line dekhbe
-  const totalScrollTime = 6000; // 6 seconds
+  const overflow = contentH - wrapperH + padding;
+  const startY = -overflow;
+  const endY = 0;
   const startTime = performance.now();
 
   function step(now) {
     const elapsed = now - startTime;
-    const p = Math.min(elapsed / totalScrollTime, 1);
+    const p = Math.min(elapsed / durationMs, 1);
     const eased = easeOutCubic(p);
 
-    // Start from bottom (overflow position), end at top (0)
-    // Actually: as user types, we scroll DOWN so newest text is visible.
-    // After typing, we scroll UP to show beginning.
-    const currentY = -overflow * (1 - eased);
+    const currentY = startY + (endY - startY) * eased;
     contentEl.style.transition = 'none';
     contentEl.style.transform = `translateY(${currentY}px)`;
 
     if (p < 1) {
-      requestAnimationFrame(step);
+      scrollAnimationId = requestAnimationFrame(step);
     }
   }
-  requestAnimationFrame(step);
+  scrollAnimationId = requestAnimationFrame(step);
 }
 
 /* ============================================================
@@ -1036,7 +1065,8 @@ function playSlide(index) {
   clearTimeout(presentationTimer);
   clearInterval(progressTimer);
 
-  const durationMs = slide.duration * 1000;
+  const effectiveDuration = getEffectiveDuration(slide);
+  const durationMs = effectiveDuration * 1000;
   let startTime = Date.now();
 
   progressTimer = setInterval(() => {
@@ -1087,7 +1117,7 @@ function resetIdleTimer() {
 }
 
 /* ============================================================
-   ✅ DOWNLOAD: PNG (INSTANT)
+   DOWNLOAD: PNG (INSTANT)
    ============================================================ */
 async function handleDownloadPNG() {
   const slide = getActiveSlide();
@@ -1128,7 +1158,7 @@ async function handleDownloadPNG() {
 }
 
 /* ============================================================
-   ✅ DOWNLOAD: VIDEO (WebM with animation + sound)
+   DOWNLOAD: VIDEO (WebM with animation + sound)
    ============================================================ */
 async function handleDownloadVideo() {
   const slide = getActiveSlide();
@@ -1173,7 +1203,8 @@ function updateDownloadProgress(percent, statusText) {
 }
 
 async function recordSlideToVideo(slide) {
-  const DURATION = slide.duration * 1000;
+  const effectiveDuration = getEffectiveDuration(slide);
+  const DURATION = effectiveDuration * 1000;
   const WIDTH = 1280;
   const HEIGHT = 720;
 
@@ -1295,7 +1326,7 @@ async function recordSlideToVideo(slide) {
 
 /* ============================================================
    CANVAS RENDERING (shared by PNG + Video export)
-   ✅ AUTO-SCROLL for long text
+   with AUTO-SCROLL for long text
    ============================================================ */
 function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
   const photoH = H / 2;
@@ -1367,7 +1398,7 @@ function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
   const lines = slide.text.split('\n');
   const totalTextH = lines.length * lineHeight;
 
-  // ✅ AUTO-SCROLL for canvas
+  // Auto-scroll for canvas
   const textAreaTop = photoH + 20;
   const textAreaBottom = H - 20;
   const textAreaCenterY = photoH + (H - photoH) / 2;
@@ -1376,21 +1407,29 @@ function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
   let scrollOffset = 0;
   if (totalTextH > availableH) {
     const maxScroll = totalTextH - availableH + 20;
-    // Scroll progresses from progress 0.5 → 1
-    const scrollProgress = Math.max(0, Math.min(1, (progress - 0.5) / 0.5));
-    const eased = easeOutCubic(scrollProgress);
-    scrollOffset = maxScroll * eased;
+
+    // Animation phase = 0 → 0.4
+    // Scroll down phase = 0.4 → 0.6 (hold)
+    // Reading phase = 0.6 → 1.0 (scroll back to top)
+    let scrollProgress = 0;
+    if (progress < 0.6) {
+      scrollProgress = 1;
+    } else {
+      const readP = (progress - 0.6) / 0.4;
+      scrollProgress = 1 - easeOutCubic(readP);
+    }
+
+    scrollOffset = maxScroll * scrollProgress;
   }
 
   let currentY = textAreaCenterY - totalTextH / 2 + lineHeight / 2 - scrollOffset;
 
   const letterDelay = 50;
   const letterDuration = 0.45;
-  const currentTimeSec = progress * slide.duration;
+  const currentTimeSec = progress * getEffectiveDuration(slide);
 
   let charGlobalIdx = 0;
 
-  // ✅ Clip to text area so overflow doesn't bleed
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, textAreaTop, W, availableH);
