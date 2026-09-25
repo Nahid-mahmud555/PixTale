@@ -258,7 +258,7 @@ class AudioSynthesizer {
       gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
 
       osc.connect(gain);
-      gain.connect(this.masterGain);
+      osc.connect && gain.connect(this.masterGain);
       osc.start(start);
       osc.stop(start + 0.3);
     });
@@ -293,7 +293,6 @@ let isPaused = false;
 let typewriterTimeout = null;
 let letterTimeouts = [];
 let idleTimer = null;
-let scrollAnimationId = null;
 
 /* ============================================================
    DOM ELEMENTS
@@ -695,11 +694,9 @@ function calculateAutoDuration(slide) {
     typingTime = totalChars * 50 + 500;
   }
 
-  // Reading time: generous time to read full text
   let readingTime = totalChars * 40;
   readingTime = Math.max(readingTime, 2500);
 
-  // Extra time for long text (scroll reading)
   const scrollPadding = totalLines > 5 ? totalLines * 500 : 0;
 
   const totalMs = typingTime + readingTime + scrollPadding;
@@ -758,7 +755,6 @@ function resetPreview() {
   previewImageBlur.classList.add('hidden');
   previewImagePlaceholder.classList.remove('hidden');
   previewTextContainer.innerHTML = '<span class="text-black/40 italic text-sm font-mono-retro">SELECT A SLIDE...</span>';
-  previewTextContainer.style.transform = 'translateY(0)';
   applyCanvasBg('#FAF8F5');
 }
 
@@ -780,31 +776,38 @@ function updateLivePreview(slide) {
 
 /* ============================================================
    PER-LETTER ANIMATION ENGINE
-   ✅ Matha ar upore scroll korbe na — text fixed position e thakbe
-   ✅ Overflow hole niche theke cut hobe (overflow hidden)
-   ✅ Auto duration
+   ✅ Fullscreen safe — text always inside frame
+   ✅ Word wrap, no overflow, no scroll
+   ✅ Auto font shrink if too long
    ============================================================ */
 function renderAnimatedText(slide, container) {
   if (typewriterTimeout) clearTimeout(typewriterTimeout);
   letterTimeouts.forEach(t => clearTimeout(t));
   letterTimeouts = [];
-  if (scrollAnimationId) cancelAnimationFrame(scrollAnimationId);
 
-  // Parent canvas — overflow hidden, text top-aligned
+  // Parent canvas — safe bounds
   const parentCanvas = container.closest('.creamy-canvas');
   if (parentCanvas) {
     parentCanvas.style.overflow = 'hidden';
     parentCanvas.style.position = 'relative';
+    parentCanvas.style.display = 'flex';
+    parentCanvas.style.flexDirection = 'column';
+    parentCanvas.style.justifyContent = 'center';
+    parentCanvas.style.alignItems = 'center';
   }
 
-  // Container reset — NO transform, top-aligned
   container.innerHTML = '';
-  container.className = `w-full max-w-2xl ${slide.alignment} ${slide.fontFamily} ${slide.fontSize} leading-relaxed tracking-tight`;
+  container.className = `w-full ${slide.alignment} ${slide.fontFamily} ${slide.fontSize} leading-relaxed tracking-tight`;
   container.style.color = slide.textColor;
-  container.style.transform = 'translateY(0)';
+  container.style.transform = 'none';
   container.style.transition = 'none';
-  container.style.marginTop = '0';
-  container.style.marginBottom = '0';
+  container.style.maxHeight = '100%';
+  container.style.maxWidth = '100%';
+  container.style.overflow = 'hidden';
+  container.style.wordBreak = 'break-word';
+  container.style.overflowWrap = 'break-word';
+  container.style.padding = '0 4px';
+  container.style.boxSizing = 'border-box';
 
   const text = slide.text;
   if (!text.trim()) {
@@ -817,6 +820,8 @@ function renderAnimatedText(slide, container) {
   // ═══ TYPEWRITER MODE ═══
   if (slide.animation === 'typewriter') {
     const textSpan = document.createElement('span');
+    textSpan.style.wordBreak = 'break-word';
+    textSpan.style.overflowWrap = 'break-word';
     const cursorSpan = document.createElement('span');
     cursorSpan.className = 'typewriter-cursor';
     container.appendChild(textSpan);
@@ -843,7 +848,7 @@ function renderAnimatedText(slide, container) {
     return;
   }
 
-  // ═══ OTHER MODES (Fade / Slide / Bounce / Glow) ═══
+  // ═══ OTHER MODES ═══
   const animClassMap = {
     fade: 'anim-letter-fade',
     slide: 'anim-letter-slide',
@@ -857,6 +862,8 @@ function renderAnimatedText(slide, container) {
   lines.forEach((line) => {
     const lineWrapper = document.createElement('div');
     lineWrapper.className = 'block';
+    lineWrapper.style.wordBreak = 'break-word';
+    lineWrapper.style.overflowWrap = 'break-word';
 
     const words = line.split(' ');
 
@@ -864,8 +871,11 @@ function renderAnimatedText(slide, container) {
       if (word === '') return;
 
       const wordWrapper = document.createElement('span');
-      wordWrapper.className = 'inline-block whitespace-nowrap';
+      wordWrapper.className = 'inline-block';
       wordWrapper.style.marginRight = '0.35em';
+      wordWrapper.style.wordBreak = 'break-word';
+      wordWrapper.style.overflowWrap = 'break-word';
+      wordWrapper.style.maxWidth = '100%';
 
       word.split('').forEach((char) => {
         const letterSpan = document.createElement('span');
@@ -886,7 +896,7 @@ function renderAnimatedText(slide, container) {
     globalLetterIndex++;
   });
 
-  // Sound sync per letter
+  // Sound sync
   let soundIndex = 0;
   lines.forEach((line) => {
     line.split(' ').forEach((word) => {
@@ -929,7 +939,6 @@ function stopPresentation() {
   clearTimeout(presentationTimer);
   clearInterval(progressTimer);
   clearTimeout(idleTimer);
-  if (scrollAnimationId) cancelAnimationFrame(scrollAnimationId);
   letterTimeouts.forEach(t => clearTimeout(t));
   letterTimeouts = [];
   presentationModal.classList.add('hidden');
@@ -1225,7 +1234,7 @@ async function recordSlideToVideo(slide) {
 
 /* ============================================================
    CANVAS RENDERING (PNG + Video)
-   ✅ Text top-aligned, no scroll, clip bottom if overflow
+   ✅ Auto-shrink font, line wrap, always fit inside frame
    ============================================================ */
 function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
   const photoH = H / 2;
@@ -1239,7 +1248,7 @@ function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   ctx.fillRect(0, 0, W, photoH);
 
-  // Main image
+  // Main image (contain)
   const imgAspect = img.width / img.height;
   const frameAspect = W / photoH;
   let drawW, drawH;
@@ -1266,7 +1275,7 @@ function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
     }
   }
 
-  // Text setup
+  // Font map
   const fontFamilyMap = {
     'font-serif-elegant': '"Playfair Display", serif',
     'font-sans-clean': 'Inter, sans-serif',
@@ -1282,7 +1291,54 @@ function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
     'text-2xl md:text-4xl': 52,
     'text-3xl md:text-5xl': 68
   };
-  const fontSize = sizeMap[slide.fontSize] || 52;
+  let fontSize = sizeMap[slide.fontSize] || 52;
+
+  // Text area bounds
+  const textAreaTop = photoH + 20;
+  const textAreaBottom = H - 20;
+  const availableH = textAreaBottom - textAreaTop;
+  const maxTextWidth = W - 120;
+
+  // Line wrap helper
+  function wrapLine(line, ctx, maxWidth) {
+    const words = line.split(' ');
+    const out = [];
+    let cur = '';
+    words.forEach(w => {
+      const test = cur ? cur + ' ' + w : w;
+      if (ctx.measureText(test).width > maxWidth && cur) {
+        out.push(cur);
+        cur = w;
+      } else {
+        cur = test;
+      }
+    });
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  // Auto-shrink font until it fits
+  ctx.font = `${fontSize}px ${fontFamily}`;
+  let wrappedLines = [];
+  let attempts = 0;
+  while (attempts < 30) {
+    ctx.font = `${fontSize}px ${fontFamily}`;
+    wrappedLines = [];
+    slide.text.split('\n').forEach(line => {
+      wrappedLines.push(...wrapLine(line, ctx, maxTextWidth));
+    });
+    const lineHeight = fontSize * 1.5;
+    const totalH = wrappedLines.length * lineHeight;
+    if (totalH <= availableH || fontSize <= 14) break;
+    fontSize -= 2;
+    attempts++;
+  }
+
+  const lineHeight = fontSize * 1.5;
+  const totalH = wrappedLines.length * lineHeight;
+
+  // Vertical center
+  let startY = textAreaTop + (availableH - totalH) / 2 + lineHeight / 2;
 
   ctx.fillStyle = slide.textColor || '#1C1917';
   ctx.font = `${fontSize}px ${fontFamily}`;
@@ -1293,100 +1349,81 @@ function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
   if (slide.alignment === 'text-left') { textX = 60; ctx.textAlign = 'left'; }
   else if (slide.alignment === 'text-right') { textX = W - 60; ctx.textAlign = 'right'; }
 
-  const lineHeight = fontSize * 1.5;
-  const lines = slide.text.split('\n');
-  const totalTextH = lines.length * lineHeight;
-
-  // Text area — TOP ALIGNED (no scroll)
-  const textAreaTop = photoH + 30;
-  const textAreaBottom = H - 30;
-  const availableH = textAreaBottom - textAreaTop;
-
-  // Text start from top (no scroll, no center)
-  let currentY = textAreaTop + lineHeight / 2;
-
   const letterDelay = 50;
   const letterDuration = 0.45;
   const currentTimeSec = progress * getEffectiveDuration(slide);
 
   let charGlobalIdx = 0;
 
-  // Clip to text area so overflow is hidden
+  // Clip to text area
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, textAreaTop, W, availableH);
   ctx.clip();
 
-  lines.forEach((line) => {
-    const words = line.split(' ');
-    const lineWidth = ctx.measureText(line).width;
+  wrappedLines.forEach((lineText) => {
+    const lineWidth = ctx.measureText(lineText).width;
     let cursorX = textX;
     if (slide.alignment === 'text-center') cursorX = textX - lineWidth / 2;
 
-    let firstWordOfLine = true;
+    // Process each char in the wrapped line
+    for (let i = 0; i < lineText.length; i++) {
+      const char = lineText[i];
+      let charProgress = 1;
 
-    words.forEach((word) => {
-      if (!firstWordOfLine) cursorX += ctx.measureText(' ').width;
-      firstWordOfLine = false;
+      if (progress < 1 || slide.animation !== 'typewriter') {
+        const charStartTime = (charGlobalIdx * letterDelay) / 1000;
+        const charEndTime = charStartTime + letterDuration;
+        if (currentTimeSec < charStartTime) charProgress = 0;
+        else if (currentTimeSec > charEndTime) charProgress = 1;
+        else charProgress = (currentTimeSec - charStartTime) / letterDuration;
+      }
 
-      word.split('').forEach((char) => {
-        let charProgress = 1;
+      let eased = charProgress;
+      if (slide.animation === 'fade' || slide.animation === 'slide' || slide.animation === 'glow') {
+        eased = easeOutCubic(charProgress);
+      } else if (slide.animation === 'bounce') {
+        eased = easeOutBack(charProgress);
+      }
 
-        if (progress < 1 || slide.animation !== 'typewriter') {
-          const charStartTime = (charGlobalIdx * letterDelay) / 1000;
-          const charEndTime = charStartTime + letterDuration;
-          if (currentTimeSec < charStartTime) charProgress = 0;
-          else if (currentTimeSec > charEndTime) charProgress = 1;
-          else charProgress = (currentTimeSec - charStartTime) / letterDuration;
+      const charWidth = ctx.measureText(char).width;
+
+      if (slide.animation === 'typewriter') {
+        const revealUpTo = currentTimeSec / (letterDelay / 1000);
+        const visibleChars = Math.floor(revealUpTo);
+        if (charGlobalIdx < visibleChars) {
+          ctx.globalAlpha = 1;
+          ctx.fillText(char, cursorX, startY);
         }
+      } else {
+        ctx.save();
+        ctx.globalAlpha = eased;
 
-        let eased = charProgress;
-        if (slide.animation === 'fade' || slide.animation === 'slide' || slide.animation === 'glow') {
-          eased = easeOutCubic(charProgress);
+        if (slide.animation === 'slide') {
+          const offsetY = (1 - eased) * 40;
+          ctx.fillText(char, cursorX, startY + offsetY);
         } else if (slide.animation === 'bounce') {
-          eased = easeOutBack(charProgress);
-        }
-
-        const charWidth = ctx.measureText(char).width;
-
-        if (slide.animation === 'typewriter') {
-          const revealUpTo = currentTimeSec / (letterDelay / 1000);
-          const visibleChars = Math.floor(revealUpTo);
-          if (charGlobalIdx < visibleChars) {
-            ctx.globalAlpha = 1;
-            ctx.fillText(char, cursorX, currentY);
-          }
+          const offsetY = (1 - eased) * -30;
+          const scale = 0.7 + eased * 0.3;
+          ctx.translate(cursorX + charWidth / 2, startY);
+          ctx.scale(scale, scale);
+          ctx.fillText(char, -charWidth / 2, 0);
+        } else if (slide.animation === 'glow') {
+          ctx.shadowColor = slide.textColor;
+          ctx.shadowBlur = (1 - eased) * 25;
+          ctx.fillText(char, cursorX, startY);
         } else {
-          ctx.save();
-          ctx.globalAlpha = eased;
-
-          if (slide.animation === 'slide') {
-            const offsetY = (1 - eased) * 40;
-            ctx.fillText(char, cursorX, currentY + offsetY);
-          } else if (slide.animation === 'bounce') {
-            const offsetY = (1 - eased) * -30;
-            const scale = 0.7 + eased * 0.3;
-            ctx.translate(cursorX + charWidth / 2, currentY);
-            ctx.scale(scale, scale);
-            ctx.fillText(char, -charWidth / 2, 0);
-          } else if (slide.animation === 'glow') {
-            ctx.shadowColor = slide.textColor;
-            ctx.shadowBlur = (1 - eased) * 25;
-            ctx.fillText(char, cursorX, currentY);
-          } else {
-            ctx.fillText(char, cursorX, currentY);
-          }
-
-          ctx.restore();
+          ctx.fillText(char, cursorX, startY);
         }
 
-        cursorX += charWidth;
-        charGlobalIdx++;
-      });
-    });
+        ctx.restore();
+      }
 
-    currentY += lineHeight;
-    charGlobalIdx++;
+      cursorX += charWidth;
+      charGlobalIdx++;
+    }
+
+    startY += lineHeight;
   });
 
   ctx.restore();
