@@ -29,7 +29,6 @@
       </div>
     </div>
 
-    <!-- Header Actions -->
     <div class="flex items-center space-x-2 md:space-x-3">
       <button id="soundToggleBtn" class="retro-btn retro-btn-yellow">
         <i id="soundIcon" class="fa-solid fa-volume-high"></i>
@@ -169,19 +168,17 @@
             <div>
               <label class="text-[10px] text-black font-mono-retro font-bold block mb-1">PHOTO FIT</label>
               <select id="objectFitSelect" class="retro-select-sm">
-                <option value="object-cover">Cover</option>
-                <option value="object-contain">Contain</option>
+                <option value="object-contain" selected>Contain (No Crop)</option>
+                <option value="object-cover">Cover (Fill)</option>
               </select>
             </div>
           </div>
         </div>
 
-        <!-- ✅ NEW: CANVAS BACKGROUND COLOR PICKER -->
+        <!-- CANVAS BACKGROUND COLOR PICKER -->
         <div class="space-y-3 pt-3 border-t-4 border-black">
           <span class="text-[10px] font-mono-retro font-bold text-black uppercase tracking-wider block bg-retro-green px-2 py-1 border-2 border-black inline-block">CANVAS BG</span>
-          <div class="grid grid-cols-4 gap-2" id="canvasColorGrid">
-            <!-- JS diye color swatch generate hobe -->
-          </div>
+          <div class="grid grid-cols-4 gap-2" id="canvasColorGrid"></div>
         </div>
 
         <button id="replayAnimBtn" class="retro-btn retro-btn-pink w-full">
@@ -198,10 +195,20 @@
         <span>● LIVE PREVIEW</span>
       </div>
 
-      <div class="w-full max-w-2xl h-[75vh] max-h-[600px] bg-black border-4 border-black shadow-retro-lg flex flex-col relative overflow-hidden">
+      <!-- ✅ NEW: Fullscreen button top-right -->
+      <button id="expandPreviewBtn" class="absolute top-3 right-5 z-10 retro-btn retro-btn-yellow" title="Fullscreen Preview">
+        <i class="fa-solid fa-expand"></i>
+        <span class="hidden sm:inline">FULLSCREEN</span>
+      </button>
+
+      <div id="previewCard" class="w-full max-w-2xl h-[75vh] max-h-[600px] bg-black border-4 border-black shadow-retro-lg flex flex-col relative overflow-hidden">
+        <!-- PHOTO AREA with blurred bg -->
         <div class="h-1/2 w-full photo-frame-bg relative overflow-hidden flex items-center justify-center border-b-4 border-black">
-          <img id="previewImage" src="" alt="Preview" class="w-full h-full object-cover object-center hidden transition-all duration-300">
-          <div id="previewImagePlaceholder" class="flex flex-col items-center justify-center text-retro-yellow/60 font-mono-retro">
+          <!-- ✅ NEW: Blurred background layer -->
+          <div id="previewImageBlur" class="absolute inset-0 bg-cover bg-center blur-2xl scale-110 opacity-60 hidden"></div>
+          <!-- Main image with contain (no crop) -->
+          <img id="previewImage" src="" alt="Preview" class="relative w-full h-full object-contain object-center hidden transition-all duration-300 z-10">
+          <div id="previewImagePlaceholder" class="flex flex-col items-center justify-center text-retro-yellow/60 font-mono-retro z-10">
             <i class="fa-regular fa-image text-3xl mb-2"></i>
             <span class="text-xs">▶ TOP PHOTO SCREEN</span>
           </div>
@@ -218,7 +225,8 @@
 
   <!-- FULLSCREEN PRESENTATION MODAL -->
   <div id="presentationModal" class="fixed inset-0 bg-black z-50 hidden flex-col">
-    <div class="absolute top-0 left-0 right-0 p-3 md:p-5 flex items-center justify-between z-20 bg-gradient-to-b from-black to-transparent">
+    <!-- Top bar (auto-hide) -->
+    <div id="playerTopBar" class="absolute top-0 left-0 right-0 p-3 md:p-5 flex items-center justify-between z-20 bg-gradient-to-b from-black/90 to-transparent transition-opacity duration-300">
       <div class="flex items-center space-x-3 text-white">
         <span id="playerSlideCounter" class="text-xs font-mono-retro font-bold bg-retro-yellow text-black px-3 py-1.5 border-2 border-black">SLIDE 1 / 1</span>
       </div>
@@ -233,8 +241,10 @@
     </div>
 
     <div class="w-full h-full flex flex-col">
+      <!-- PHOTO AREA with blurred bg -->
       <div class="h-1/2 w-full photo-frame-bg relative flex items-center justify-center overflow-hidden border-b-4 border-black">
-        <img id="playerImage" src="" alt="Presentation Photo" class="w-full h-full object-cover object-center">
+        <div id="playerImageBlur" class="absolute inset-0 bg-cover bg-center blur-2xl scale-110 opacity-60 hidden"></div>
+        <img id="playerImage" src="" alt="Presentation Photo" class="relative w-full h-full object-contain object-center z-10">
       </div>
 
       <div class="h-1/2 w-full creamy-canvas p-6 md:p-12 flex flex-col justify-center items-center relative overflow-hidden">
@@ -242,14 +252,15 @@
       </div>
     </div>
 
-    <div class="absolute bottom-0 left-0 right-0 h-3 bg-black border-t-4 border-black">
+    <div id="playerProgressBar" class="absolute bottom-0 left-0 right-0 h-3 bg-black border-t-4 border-black transition-opacity duration-300">
       <div id="presentationProgressBar" class="h-full bg-retro-red transition-all duration-100 ease-linear" style="width: 0%;"></div>
     </div>
 
-    <button id="prevSlideBtn" class="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 border-3 border-white bg-black text-white flex items-center justify-center hover:bg-retro-yellow hover:text-black transition">
+    <!-- Nav buttons (auto-hide) -->
+    <button id="prevSlideBtn" class="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 border-3 border-white bg-black text-white flex items-center justify-center hover:bg-retro-yellow hover:text-black transition z-20 opacity-0 pointer-events-none">
       <i class="fa-solid fa-chevron-left"></i>
     </button>
-    <button id="nextSlideBtn" class="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 border-3 border-white bg-black text-white flex items-center justify-center hover:bg-retro-yellow hover:text-black transition">
+    <button id="nextSlideBtn" class="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 border-3 border-white bg-black text-white flex items-center justify-center hover:bg-retro-yellow hover:text-black transition z-20 opacity-0 pointer-events-none">
       <i class="fa-solid fa-chevron-right"></i>
     </button>
   </div>
