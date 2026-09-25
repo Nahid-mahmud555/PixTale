@@ -1,6 +1,5 @@
 /* ============================================================
    🎬 PROFESSIONAL SOUND SYNTHESIZER
-   Video editor style: pop, click, whoosh, tick, swoosh
    ============================================================ */
 class AudioSynthesizer {
   constructor() {
@@ -20,9 +19,7 @@ class AudioSynthesizer {
     if (this.ctx.state === 'suspended') this.ctx.resume();
   }
 
-  // ══════════════════════════════════════════════════════════
-  // 🎯 TYPEWRITER CLICK — Mechanical keyboard key tap
-  // ══════════════════════════════════════════════════════════
+  // ═══ TYPEWRITER CLICK ═══
   playTypewriterKey() {
     if (!this.soundEnabled) return;
     this.init();
@@ -72,9 +69,7 @@ class AudioSynthesizer {
     noise.stop(now + 0.02);
   }
 
-  // ══════════════════════════════════════════════════════════
-  // 🎯 LETTER POP — Cute candy-pop sound
-  // ══════════════════════════════════════════════════════════
+  // ═══ 🎯 CUTE LETTER POP (Fade) ═══
   playLetterPop() {
     if (!this.soundEnabled) return;
     this.init();
@@ -83,31 +78,42 @@ class AudioSynthesizer {
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sine';
-    const basePitch = 700 + Math.random() * 500;
+    const basePitch = 800 + Math.random() * 600;
     osc.frequency.setValueAtTime(basePitch, now);
-    osc.frequency.exponentialRampToValueAtTime(basePitch * 2, now + 0.04);
-    osc.frequency.exponentialRampToValueAtTime(basePitch * 0.8, now + 0.09);
+    osc.frequency.exponentialRampToValueAtTime(basePitch * 2.2, now + 0.035);
+    osc.frequency.exponentialRampToValueAtTime(basePitch * 0.9, now + 0.08);
 
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.055, now + 0.008);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    gain.gain.linearRampToValueAtTime(0.05, now + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    // Add a tiny sparkle layer
+    const spark = this.ctx.createOscillator();
+    const sparkGain = this.ctx.createGain();
+    spark.type = 'triangle';
+    spark.frequency.setValueAtTime(basePitch * 3, now);
+    spark.frequency.exponentialRampToValueAtTime(basePitch * 4.5, now + 0.03);
+    sparkGain.gain.setValueAtTime(0.02, now);
+    sparkGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+    spark.connect(sparkGain);
+    sparkGain.connect(this.masterGain);
+    spark.start(now);
+    spark.stop(now + 0.05);
 
     osc.connect(gain);
     gain.connect(this.masterGain);
     osc.start(now);
-    osc.stop(now + 0.1);
+    osc.stop(now + 0.09);
   }
 
-  // ══════════════════════════════════════════════════════════
-  // 🎯 SOFT WHOOSH — For slide transitions
-  // ══════════════════════════════════════════════════════════
+  // ═══ 🎯 CUTE SWOOSH (Slide animation) ═══
   playWhoosh() {
     if (!this.soundEnabled) return;
     this.init();
     const now = this.ctx.currentTime;
 
     const noise = this.ctx.createBufferSource();
-    const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.3, this.ctx.sampleRate);
+    const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.25, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < data.length; i++) {
       data[i] = (Math.random() * 2 - 1) * Math.sin((i / data.length) * Math.PI);
@@ -116,26 +122,24 @@ class AudioSynthesizer {
 
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(400, now);
-    filter.frequency.exponentialRampToValueAtTime(2000, now + 0.15);
-    filter.frequency.exponentialRampToValueAtTime(600, now + 0.3);
-    filter.Q.value = 2;
+    filter.frequency.setValueAtTime(600, now);
+    filter.frequency.exponentialRampToValueAtTime(2400, now + 0.12);
+    filter.frequency.exponentialRampToValueAtTime(800, now + 0.25);
+    filter.Q.value = 3;
 
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.04, now + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    gain.gain.linearRampToValueAtTime(0.045, now + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(this.masterGain);
     noise.start(now);
-    noise.stop(now + 0.3);
+    noise.stop(now + 0.25);
   }
 
-  // ══════════════════════════════════════════════════════════
-  // 🎯 SUB BASS THUMP — For bounce animation
-  // ══════════════════════════════════════════════════════════
+  // ═══ 🎯 CUTE THUMP (Bounce animation) ═══
   playBounceThump() {
     if (!this.soundEnabled) return;
     this.init();
@@ -144,21 +148,32 @@ class AudioSynthesizer {
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(120, now);
-    osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
 
-    gain.gain.setValueAtTime(0.15, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    gain.gain.setValueAtTime(0.13, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    // Add a soft click on top for cuteness
+    const click = this.ctx.createOscillator();
+    const clickGain = this.ctx.createGain();
+    click.type = 'triangle';
+    click.frequency.setValueAtTime(1200, now);
+    click.frequency.exponentialRampToValueAtTime(400, now + 0.02);
+    clickGain.gain.setValueAtTime(0.03, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+    click.connect(clickGain);
+    clickGain.connect(this.masterGain);
+    click.start(now);
+    click.stop(now + 0.03);
 
     osc.connect(gain);
     gain.connect(this.masterGain);
     osc.start(now);
-    osc.stop(now + 0.16);
+    osc.stop(now + 0.13);
   }
 
-  // ══════════════════════════════════════════════════════════
-  // 🎯 CINEMATIC SWELL — For glow animation
-  // ══════════════════════════════════════════════════════════
+  // ═══ 🎯 CUTE SWELL (Glow animation) ═══
   playGlowSwell() {
     if (!this.soundEnabled) return;
     this.init();
@@ -167,21 +182,32 @@ class AudioSynthesizer {
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(400, now);
-    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+    osc.frequency.setValueAtTime(500, now);
+    osc.frequency.exponentialRampToValueAtTime(1400, now + 0.09);
 
-    gain.gain.setValueAtTime(0.04, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    gain.gain.setValueAtTime(0.035, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+
+    // Add a chime harmonic
+    const harm = this.ctx.createOscillator();
+    const harmGain = this.ctx.createGain();
+    harm.type = 'sine';
+    harm.frequency.setValueAtTime(1500, now);
+    harm.frequency.exponentialRampToValueAtTime(3000, now + 0.08);
+    harmGain.gain.setValueAtTime(0.015, now);
+    harmGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    harm.connect(harmGain);
+    harmGain.connect(this.masterGain);
+    harm.start(now);
+    harm.stop(now + 0.1);
 
     osc.connect(gain);
     gain.connect(this.masterGain);
     osc.start(now);
-    osc.stop(now + 0.13);
+    osc.stop(now + 0.12);
   }
 
-  // ══════════════════════════════════════════════════════════
-  // 🎯 SLIDE CHANGE — Big transition whoosh
-  // ══════════════════════════════════════════════════════════
+  // ═══ SLIDE TRANSITION ═══
   playSlideTransition() {
     if (!this.soundEnabled) return;
     this.init();
@@ -192,7 +218,7 @@ class AudioSynthesizer {
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(800, now);
     osc.frequency.exponentialRampToValueAtTime(150, now + 0.35);
-    
+
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.setValueAtTime(2000, now);
@@ -208,9 +234,7 @@ class AudioSynthesizer {
     osc.stop(now + 0.36);
   }
 
-  // ══════════════════════════════════════════════════════════
-  // 🎯 UI CLICK — Cute UI feedback pop
-  // ══════════════════════════════════════════════════════════
+  // ═══ UI CLICK ═══
   playUIClick() {
     if (!this.soundEnabled) return;
     this.init();
@@ -231,9 +255,7 @@ class AudioSynthesizer {
     osc.stop(now + 0.06);
   }
 
-  // ══════════════════════════════════════════════════════════
-  // 🎯 SUCCESS CHIME — For slide end / play start
-  // ══════════════════════════════════════════════════════════
+  // ═══ SUCCESS CHIME ═══
   playSuccessChime() {
     if (!this.soundEnabled) return;
     this.init();
@@ -261,7 +283,7 @@ class AudioSynthesizer {
 const soundFx = new AudioSynthesizer();
 
 /* ============================================================
-   🎨 CANVAS BACKGROUND COLORS (user-defined palette)
+   CANVAS COLORS
    ============================================================ */
 const CANVAS_COLORS = [
   { name: 'Cream (Default)', value: '#FAF8F5' },
@@ -275,7 +297,7 @@ const CANVAS_COLORS = [
 ];
 
 /* ============================================================
-   STATE VARIABLES
+   STATE
    ============================================================ */
 let slides = [];
 let activeSlideId = null;
@@ -285,6 +307,7 @@ let progressTimer = null;
 let isPaused = false;
 let typewriterTimeout = null;
 let letterTimeouts = [];
+let idleTimer = null;
 
 /* ============================================================
    DOM ELEMENTS
@@ -308,14 +331,17 @@ const objectFitSelect = document.getElementById('objectFitSelect');
 const alignBtns = document.querySelectorAll('.align-btn');
 
 const previewImage = document.getElementById('previewImage');
+const previewImageBlur = document.getElementById('previewImageBlur');
 const previewImagePlaceholder = document.getElementById('previewImagePlaceholder');
 const previewTextContainer = document.getElementById('previewTextContainer');
 const replayAnimBtn = document.getElementById('replayAnimBtn');
+const expandPreviewBtn = document.getElementById('expandPreviewBtn');
 
 const presentationModal = document.getElementById('presentationModal');
 const startPresentationBtn = document.getElementById('startPresentationBtn');
 const closePresentationBtn = document.getElementById('closePresentationBtn');
 const playerImage = document.getElementById('playerImage');
+const playerImageBlur = document.getElementById('playerImageBlur');
 const playerTextContainer = document.getElementById('playerTextContainer');
 const playerSlideCounter = document.getElementById('playerSlideCounter');
 const presentationProgressBar = document.getElementById('presentationProgressBar');
@@ -333,14 +359,13 @@ const slidesSidebar = document.getElementById('slidesSidebar');
 const customizerPanel = document.getElementById('customizerPanel');
 const previewPanel = document.getElementById('previewPanel');
 
-// ✅ NEW: Canvas color grid
 const canvasColorGrid = document.getElementById('canvasColorGrid');
 
 /* ============================================================
    INIT
    ============================================================ */
 window.addEventListener('DOMContentLoaded', () => {
-  renderCanvasColorSwatches();   // ✅ NEW
+  renderCanvasColorSwatches();
   addDemoSlide();
   setupEventListeners();
   setupMobileTabs();
@@ -357,8 +382,8 @@ function addDemoSlide() {
     alignment: 'text-center',
     textColor: '#1C1917',
     duration: 5,
-    objectFit: 'object-cover',
-    canvasBg: '#FAF8F5'   // ✅ NEW
+    objectFit: 'object-contain',
+    canvasBg: '#FAF8F5'
   };
   slides.push(demoSlide);
   renderSlideList();
@@ -366,7 +391,7 @@ function addDemoSlide() {
 }
 
 /* ============================================================
-   🎨 CANVAS COLOR SWATCHES (render + click handler)
+   CANVAS SWATCHES
    ============================================================ */
 function renderCanvasColorSwatches() {
   if (!canvasColorGrid) return;
@@ -387,7 +412,6 @@ function renderCanvasColorSwatches() {
       slide.canvasBg = color.value;
       soundFx.playUIClick();
 
-      // Active state update
       document.querySelectorAll('.canvas-swatch').forEach(s => s.classList.remove('active'));
       swatch.classList.add('active');
 
@@ -398,17 +422,10 @@ function renderCanvasColorSwatches() {
   });
 }
 
-/* ============================================================
-   🎨 APPLY CANVAS BACKGROUND TO PREVIEW + PLAYER
-   ============================================================ */
 function applyCanvasBg(color) {
   const bgColor = color || '#FAF8F5';
-
-  // Preview text area
   const previewCanvas = previewTextContainer.closest('.creamy-canvas');
   if (previewCanvas) previewCanvas.style.backgroundColor = bgColor;
-
-  // Player text area
   const playerCanvas = playerTextContainer.closest('.creamy-canvas');
   if (playerCanvas) playerCanvas.style.backgroundColor = bgColor;
 }
@@ -432,9 +449,7 @@ function setupEventListeners() {
 
   alignBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      alignBtns.forEach(b => {
-        b.classList.remove('active', 'bg-retro-yellow');
-      });
+      alignBtns.forEach(b => b.classList.remove('active', 'bg-retro-yellow'));
       btn.classList.add('active', 'bg-retro-yellow');
       soundFx.playUIClick();
       updateActiveSlide();
@@ -445,6 +460,12 @@ function setupEventListeners() {
     soundFx.playUIClick();
     const slide = getActiveSlide();
     if (slide) renderAnimatedText(slide, previewTextContainer);
+  });
+
+  // ✅ NEW: Fullscreen preview button
+  expandPreviewBtn.addEventListener('click', () => {
+    soundFx.playUIClick();
+    startPresentation();
   });
 
   soundToggleBtn.addEventListener('click', () => {
@@ -467,6 +488,10 @@ function setupEventListeners() {
     if (e.key === 'ArrowRight' || e.key === 'Space') showNextSlide();
     if (e.key === 'ArrowLeft') showPrevSlide();
   });
+
+  // ✅ NEW: Mouse move → show controls (auto-hide)
+  presentationModal.addEventListener('mousemove', resetIdleTimer);
+  presentationModal.addEventListener('click', resetIdleTimer);
 }
 
 function setupMobileTabs() {
@@ -512,8 +537,8 @@ function handleFileUpload(e) {
         alignment: 'text-center',
         textColor: '#1C1917',
         duration: 5,
-        objectFit: 'object-cover',
-        canvasBg: '#FAF8F5'   // ✅ NEW
+        objectFit: 'object-contain',
+        canvasBg: '#FAF8F5'
       };
       slides.push(newSlide);
       renderSlideList();
@@ -526,7 +551,7 @@ function handleFileUpload(e) {
 }
 
 /* ============================================================
-   SLIDE LIST RENDER
+   SLIDE LIST
    ============================================================ */
 function renderSlideList() {
   slideCountText.textContent = slides.length;
@@ -613,7 +638,6 @@ function selectSlide(id) {
     }
   });
 
-  // ✅ NEW: Canvas color active mark koro
   document.querySelectorAll('.canvas-swatch').forEach(s => {
     if (s.dataset.color === slide.canvasBg) {
       s.classList.add('active');
@@ -667,27 +691,35 @@ function disableEditor() { editorControlsWrapper.classList.add('opacity-40', 'po
 
 function resetPreview() {
   previewImage.classList.add('hidden');
+  previewImageBlur.classList.add('hidden');
   previewImagePlaceholder.classList.remove('hidden');
   previewTextContainer.innerHTML = '<span class="text-black/40 italic text-sm font-mono-retro">SELECT A SLIDE...</span>';
-  // ✅ NEW: Reset canvas bg
   applyCanvasBg('#FAF8F5');
 }
 
+/* ============================================================
+   ✅ UPDATE LIVE PREVIEW (with blurred bg + no crop)
+   ============================================================ */
 function updateLivePreview(slide) {
   if (!slide) return;
+
+  // Main image — contain (no crop)
   previewImage.src = slide.imageUrl;
-  previewImage.className = `w-full h-full ${slide.objectFit} object-center transition-all duration-300`;
+  previewImage.className = `relative w-full h-full ${slide.objectFit} object-center transition-all duration-300 z-10`;
   previewImage.classList.remove('hidden');
+
+  // Blurred background layer
+  previewImageBlur.style.backgroundImage = `url('${slide.imageUrl}')`;
+  previewImageBlur.classList.remove('hidden');
+
   previewImagePlaceholder.classList.add('hidden');
 
-  // ✅ NEW: Canvas background apply koro
   applyCanvasBg(slide.canvasBg);
-
   renderAnimatedText(slide, previewTextContainer);
 }
 
 /* ============================================================
-   🎬 PER-LETTER ANIMATION ENGINE
+   PER-LETTER ANIMATION ENGINE
    ============================================================ */
 function renderAnimatedText(slide, container) {
   if (typewriterTimeout) clearTimeout(typewriterTimeout);
@@ -704,7 +736,7 @@ function renderAnimatedText(slide, container) {
     return;
   }
 
-  // ═══════ TYPEWRITER MODE (letter-by-letter + click) ═══════
+  // TYPEWRITER
   if (slide.animation === 'typewriter') {
     const textSpan = document.createElement('span');
     const cursorSpan = document.createElement('span');
@@ -728,7 +760,7 @@ function renderAnimatedText(slide, container) {
     return;
   }
 
-  // ═══════ OTHER MODES (per-letter with synced sounds) ═══════
+  // OTHER MODES
   const animClassMap = {
     fade: 'anim-letter-fade',
     slide: 'anim-letter-slide',
@@ -759,7 +791,7 @@ function renderAnimatedText(slide, container) {
     container.appendChild(wordWrapper);
   });
 
-  // ═══════ Sound sync per letter ═══════
+  // Sound sync
   let globalIndex = 0;
   words.forEach((word) => {
     word.split('').forEach(() => {
@@ -773,7 +805,7 @@ function renderAnimatedText(slide, container) {
       letterTimeouts.push(timeoutId);
       globalIndex++;
     });
-    globalIndex++; // space gap
+    globalIndex++;
   });
 }
 
@@ -785,7 +817,7 @@ function getGlobalLetterIndex(words, targetWordIdx, targetCharIdx) {
 }
 
 /* ============================================================
-   PRESENTATION MODE
+   ✅ PRESENTATION MODE (with auto-hide controls)
    ============================================================ */
 function startPresentation() {
   if (!slides.length) {
@@ -797,16 +829,19 @@ function startPresentation() {
   presentationModal.classList.remove('hidden');
   presentationModal.classList.add('flex');
   soundFx.playSuccessChime();
+  resetIdleTimer();
   playSlide(presentationIndex);
 }
 
 function stopPresentation() {
   clearTimeout(presentationTimer);
   clearInterval(progressTimer);
+  clearTimeout(idleTimer);
   letterTimeouts.forEach(t => clearTimeout(t));
   letterTimeouts = [];
   presentationModal.classList.add('hidden');
   presentationModal.classList.remove('flex');
+  presentationModal.classList.remove('presentation-idle');
   soundFx.playWhoosh();
 }
 
@@ -822,13 +857,17 @@ function playSlide(index) {
 
   soundFx.playSlideTransition();
 
+  // Main image
   playerImage.src = slide.imageUrl;
-  playerImage.className = `w-full h-full ${slide.objectFit} object-center`;
+  playerImage.className = `relative w-full h-full ${slide.objectFit} object-center z-10`;
+
+  // Blurred bg
+  playerImageBlur.style.backgroundImage = `url('${slide.imageUrl}')`;
+  playerImageBlur.classList.remove('hidden');
+
   playerSlideCounter.textContent = `SLIDE ${index + 1} / ${slides.length}`;
 
-  // ✅ NEW: Canvas background apply koro player e
   applyCanvasBg(slide.canvasBg);
-
   renderAnimatedText(slide, playerTextContainer);
 
   clearTimeout(presentationTimer);
@@ -862,6 +901,7 @@ function togglePausePresentation() {
     ? '<i class="fa-solid fa-play text-xs"></i>'
     : '<i class="fa-solid fa-pause text-xs"></i>';
   soundFx.playUIClick();
+  resetIdleTimer();
 }
 
 function showNextSlide() {
@@ -871,4 +911,17 @@ function showNextSlide() {
 
 function showPrevSlide() {
   if (presentationIndex - 1 >= 0) playSlide(presentationIndex - 1);
+}
+
+/* ============================================================
+   ✅ AUTO-HIDE CONTROLS (3s idle → hide)
+   ============================================================ */
+function resetIdleTimer() {
+  presentationModal.classList.remove('presentation-idle');
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    if (!presentationModal.classList.contains('hidden')) {
+      presentationModal.classList.add('presentation-idle');
+    }
+  }, 3000);
 }
