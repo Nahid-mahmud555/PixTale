@@ -1,3 +1,6 @@
+/* ============================================================
+   AUDIO SYNTHESIZER - Web Audio API diye sound generate
+   ============================================================ */
 class AudioSynthesizer {
   constructor() {
     this.ctx = null;
@@ -14,6 +17,7 @@ class AudioSynthesizer {
     }
   }
 
+  // Typewriter key click sound (protita letter er jonno)
   playTypewriterKey() {
     if (!this.soundEnabled) return;
     this.init();
@@ -35,7 +39,8 @@ class AudioSynthesizer {
     osc.stop(this.ctx.currentTime + 0.03);
   }
 
-  playWordSwoosh() {
+  // Letter swoosh sound (onno animation er jonno)
+  playLetterSwoosh() {
     if (!this.soundEnabled) return;
     this.init();
 
@@ -55,10 +60,35 @@ class AudioSynthesizer {
     osc.start();
     osc.stop(this.ctx.currentTime + 0.08);
   }
+
+  // Soft tick sound (fade/slide/bounce/glow er jonno - lighter)
+  playLetterTick() {
+    if (!this.soundEnabled) return;
+    this.init();
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800 + Math.random() * 200, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + 0.02);
+
+    gain.gain.setValueAtTime(0.03, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.02);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.02);
+  }
 }
 
 const soundFx = new AudioSynthesizer();
 
+/* ============================================================
+   STATE VARIABLES
+   ============================================================ */
 let slides = [];
 let activeSlideId = null;
 let presentationIndex = 0;
@@ -66,7 +96,11 @@ let presentationTimer = null;
 let progressTimer = null;
 let isPaused = false;
 let typewriterTimeout = null;
+let letterTimeouts = [];
 
+/* ============================================================
+   DOM ELEMENTS
+   ============================================================ */
 const imageFileInput = document.getElementById('imageFileInput');
 const slideListContainer = document.getElementById('slideListContainer');
 const emptySlidesState = document.getElementById('emptySlidesState');
@@ -111,6 +145,9 @@ const slidesSidebar = document.getElementById('slidesSidebar');
 const customizerPanel = document.getElementById('customizerPanel');
 const previewPanel = document.getElementById('previewPanel');
 
+/* ============================================================
+   INIT
+   ============================================================ */
 window.addEventListener('DOMContentLoaded', () => {
   addDemoSlide();
   setupEventListeners();
@@ -135,6 +172,9 @@ function addDemoSlide() {
   selectSlide(demoSlide.id);
 }
 
+/* ============================================================
+   EVENT LISTENERS
+   ============================================================ */
 function setupEventListeners() {
   imageFileInput.addEventListener('change', handleFileUpload);
   textInput.addEventListener('input', updateActiveSlide);
@@ -205,6 +245,9 @@ function setupMobileTabs() {
   tabSlidesBtn.addEventListener('click', () => switchTab(tabSlidesBtn, slidesSidebar));
 }
 
+/* ============================================================
+   FILE UPLOAD
+   ============================================================ */
 function handleFileUpload(e) {
   const files = Array.from(e.target.files);
   if (!files.length) return;
@@ -233,6 +276,9 @@ function handleFileUpload(e) {
   imageFileInput.value = '';
 }
 
+/* ============================================================
+   SLIDE LIST RENDER
+   ============================================================ */
 function renderSlideList() {
   slideCountText.textContent = slides.length;
   mobileSlideCount.textContent = slides.length;
@@ -260,7 +306,7 @@ function renderSlideList() {
 
     slideEl.innerHTML = `
       <div class="w-10 h-10 rounded-lg bg-slate-900 overflow-hidden shrink-0 border border-slate-700/50">
-        <img src="${slide.imageUrl}" class="w-full h-full object-cover">
+        <img src="${slide.imageUrl}" class="w-full h-full object-cover object-center">
       </div>
       <div class="flex-1 min-w-0">
         <div class="flex items-center justify-between">
@@ -287,10 +333,13 @@ function renderSlideList() {
   });
 }
 
+/* ============================================================
+   SLIDE SELECT & UPDATE
+   ============================================================ */
 function selectSlide(id) {
   activeSlideId = id;
   renderSlideList();
-  
+
   const slide = getActiveSlide();
   if (!slide) return;
 
@@ -354,26 +403,36 @@ function clearAllSlides() {
 
 function enableEditor() { editorControlsWrapper.classList.remove('opacity-40', 'pointer-events-none'); }
 function disableEditor() { editorControlsWrapper.classList.add('opacity-40', 'pointer-events-none'); activeSlideLabel.textContent = 'No Selection'; }
+
 function resetPreview() {
   previewImage.classList.add('hidden');
   previewImagePlaceholder.classList.remove('hidden');
   previewTextContainer.innerHTML = '<span class="text-stone-400 italic text-sm">Select a slide to preview...</span>';
 }
 
+/* ============================================================
+   LIVE PREVIEW UPDATE (chobi full frame e sundor vabe)
+   ============================================================ */
 function updateLivePreview(slide) {
   if (!slide) return;
   previewImage.src = slide.imageUrl;
-  previewImage.className = `w-full h-full ${slide.objectFit} transition-all duration-300`;
+  previewImage.className = `w-full h-full ${slide.objectFit} object-center transition-all duration-300`;
   previewImage.classList.remove('hidden');
   previewImagePlaceholder.classList.add('hidden');
 
   renderAnimatedText(slide, previewTextContainer);
 }
 
+/* ============================================================
+   🎬 PER-LETTER ANIMATION ENGINE (main magic!)
+   ============================================================ */
 function renderAnimatedText(slide, container) {
+  // Age er sob timeout clear koro
   if (typewriterTimeout) clearTimeout(typewriterTimeout);
-  container.innerHTML = '';
+  letterTimeouts.forEach(t => clearTimeout(t));
+  letterTimeouts = [];
 
+  container.innerHTML = '';
   container.className = `w-full max-w-2xl ${slide.alignment} ${slide.fontFamily} ${slide.fontSize} leading-relaxed tracking-tight`;
   container.style.color = slide.textColor;
 
@@ -383,6 +442,7 @@ function renderAnimatedText(slide, container) {
     return;
   }
 
+  // ===== TYPEWRITER MODE: letter-by-letter with click sound =====
   if (slide.animation === 'typewriter') {
     const textSpan = document.createElement('span');
     const cursorSpan = document.createElement('span');
@@ -395,37 +455,96 @@ function renderAnimatedText(slide, container) {
       if (charIndex < text.length) {
         const char = text.charAt(charIndex);
         textSpan.textContent += char;
-        if (char !== ' ') soundFx.playTypewriterKey();
+
+        // Protita letter er jonno sound (space er jonno noy)
+        if (char !== ' ') {
+          soundFx.playTypewriterKey();
+        }
+
         charIndex++;
         typewriterTimeout = setTimeout(typeChar, 50);
       } else {
-        setTimeout(() => cursorSpan.remove(), 2000);
+        // Type shesh e cursor remove
+        typewriterTimeout = setTimeout(() => cursorSpan.remove(), 2000);
       }
     }
     typeChar();
     return;
   }
 
-  const words = text.split(' ');
+  // ===== OTHER MODES: protita LETTER alada kore animate =====
   const animClassMap = {
-    fade: 'anim-word-fade',
-    slide: 'anim-word-slide',
-    bounce: 'anim-word-bounce',
-    glow: 'anim-word-glow'
+    fade: 'anim-letter-fade',
+    slide: 'anim-letter-slide',
+    bounce: 'anim-letter-bounce',
+    glow: 'anim-letter-glow'
   };
-  const animClass = animClassMap[slide.animation] || 'anim-word-fade';
+  const animClass = animClassMap[slide.animation] || 'anim-letter-fade';
 
-  words.forEach((word, index) => {
-    const wordSpan = document.createElement('span');
-    wordSpan.className = `${animClass} mr-2.5 mb-1 inline-block`;
-    wordSpan.style.animationDelay = `${index * 0.12}s`;
-    wordSpan.textContent = word;
-    container.appendChild(wordSpan);
+  // Text ke word e bhag koro, then protita word ke letter e bhag koro
+  const words = text.split(' ');
 
-    setTimeout(() => soundFx.playWordSwoosh(), index * 120);
+  words.forEach((word, wordIdx) => {
+    // Protita word er jonno ekta wrapper span (jate word break na hoy)
+    const wordWrapper = document.createElement('span');
+    wordWrapper.className = 'inline-block whitespace-nowrap';
+    wordWrapper.style.marginRight = '0.35em';
+
+    // Word er protita letter alada span
+    word.split('').forEach((char, charIdx) => {
+      const letterSpan = document.createElement('span');
+      letterSpan.className = `${animClass} inline-block`;
+      letterSpan.textContent = char;
+
+      // Letter er animation delay calculate koro
+      // Protita word er majhe ektu beshi delay, ar word er vitore letter delay
+      const globalLetterIndex = getGlobalLetterIndex(words, wordIdx, charIdx);
+      const delay = globalLetterIndex * 0.05; // 50ms per letter
+      letterSpan.style.animationDelay = `${delay}s`;
+
+      wordWrapper.appendChild(letterSpan);
+    });
+
+    container.appendChild(wordWrapper);
+
+    // Word shesh e ekta space (visual)
+    const spaceSpan = document.createElement('span');
+    spaceSpan.className = 'inline-block';
+    spaceSpan.innerHTML = '&nbsp;';
+    container.appendChild(spaceSpan);
+  });
+
+  // ===== Protita letter er sathe sound sync =====
+  let globalIndex = 0;
+  words.forEach((word, wordIdx) => {
+    word.split('').forEach((char) => {
+      const delay = globalIndex * 50; // 50ms per letter
+
+      const timeoutId = setTimeout(() => {
+        // Fade/Slide/Bounce/Glow er jonno soft tick sound
+        soundFx.playLetterTick();
+      }, delay);
+
+      letterTimeouts.push(timeoutId);
+      globalIndex++;
+    });
+    globalIndex++; // space er jonno o ekta gap
   });
 }
 
+// Helper: global letter index calculate koro (word ar char index theke)
+function getGlobalLetterIndex(words, targetWordIdx, targetCharIdx) {
+  let index = 0;
+  for (let i = 0; i < targetWordIdx; i++) {
+    index += words[i].length + 1; // +1 for space
+  }
+  index += targetCharIdx;
+  return index;
+}
+
+/* ============================================================
+   PRESENTATION MODE
+   ============================================================ */
 function startPresentation() {
   if (!slides.length) {
     alert('Please add slides first.');
@@ -441,6 +560,8 @@ function startPresentation() {
 function stopPresentation() {
   clearTimeout(presentationTimer);
   clearInterval(progressTimer);
+  letterTimeouts.forEach(t => clearTimeout(t));
+  letterTimeouts = [];
   presentationModal.classList.add('hidden');
   presentationModal.classList.remove('flex');
 }
@@ -452,11 +573,12 @@ function playSlide(index) {
   }
 
   presentationIndex = index;
-  const slide = slides.length ? slides[index] : null;
+  const slide = slides[index];
   if (!slide) return;
 
+  // Chobi full frame e sundor vabe dekhabe
   playerImage.src = slide.imageUrl;
-  playerImage.className = `w-full h-full ${slide.objectFit}`;
+  playerImage.className = `w-full h-full ${slide.objectFit} object-center`;
   playerSlideCounter.textContent = `Slide ${index + 1} / ${slides.length}`;
 
   renderAnimatedText(slide, playerTextContainer);
@@ -489,7 +611,9 @@ function playSlide(index) {
 
 function togglePausePresentation() {
   isPaused = !isPaused;
-  playerPauseBtn.innerHTML = isPaused ? '<i class="fa-solid fa-play text-xs"></i>' : '<i class="fa-solid fa-pause text-xs"></i>';
+  playerPauseBtn.innerHTML = isPaused
+    ? '<i class="fa-solid fa-play text-xs"></i>'
+    : '<i class="fa-solid fa-pause text-xs"></i>';
 }
 
 function showNextSlide() {
