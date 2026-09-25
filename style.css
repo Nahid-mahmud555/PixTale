@@ -15,18 +15,13 @@
   --cream-border: #E8E2D9;
 }
 
-/* ============================================================
-   BASE
-   ============================================================ */
 body {
   font-family: 'Inter', sans-serif;
   background-color: var(--retro-navy);
   color: var(--retro-black);
 }
 
-.retro-body {
-  background: var(--retro-navy);
-}
+.retro-body { background: var(--retro-navy); }
 
 .bg-retro-cream { background-color: var(--retro-cream); }
 .bg-retro-navy { background-color: var(--retro-navy); }
@@ -34,22 +29,11 @@ body {
 .bg-retro-yellow { background-color: var(--retro-yellow); }
 .bg-retro-pink { background-color: var(--retro-pink); }
 .bg-retro-green { background-color: var(--retro-green); }
-
 .text-retro-yellow { color: var(--retro-yellow); }
 
-/* ============================================================
-   RETRO SHADOWS (chunky black offset)
-   ============================================================ */
-.shadow-retro {
-  box-shadow: 4px 4px 0 0 #000;
-}
-.shadow-retro-lg {
-  box-shadow: 8px 8px 0 0 #000;
-}
+.shadow-retro { box-shadow: 4px 4px 0 0 #000; }
+.shadow-retro-lg { box-shadow: 8px 8px 0 0 #000; }
 
-/* ============================================================
-   RETRO FONTS
-   ============================================================ */
 .font-retro-display { font-family: 'Bungee', sans-serif; letter-spacing: 0.02em; }
 .font-mono-retro { font-family: 'DM Mono', monospace; letter-spacing: 0.05em; }
 .font-sans-clean { font-family: 'Inter', sans-serif; }
@@ -78,14 +62,8 @@ body {
   cursor: pointer;
   transition: all 0.1s ease;
 }
-.retro-btn:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 0 #000;
-}
-.retro-btn:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 0 #000;
-}
+.retro-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 0 #000; }
+.retro-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 0 #000; }
 .retro-btn-yellow { background: var(--retro-yellow); }
 .retro-btn-red { background: var(--retro-red); color: #fff; }
 .retro-btn-green { background: var(--retro-green); }
@@ -111,9 +89,7 @@ body {
   box-shadow: 3px 3px 0 0 #000;
   transform: translate(-1px, -1px);
 }
-.retro-input::placeholder {
-  color: rgba(0,0,0,0.35);
-}
+.retro-input::placeholder { color: rgba(0,0,0,0.35); }
 
 .retro-input-sm, .retro-select-sm {
   width: 100%;
@@ -126,9 +102,7 @@ body {
   outline: none;
   box-shadow: 2px 2px 0 0 #000;
 }
-.retro-input-sm:focus, .retro-select-sm:focus {
-  background: var(--retro-yellow);
-}
+.retro-input-sm:focus, .retro-select-sm:focus { background: var(--retro-yellow); }
 
 select.retro-select, select.retro-select-sm {
   cursor: pointer;
@@ -141,7 +115,7 @@ select.retro-select, select.retro-select-sm {
 }
 
 /* ============================================================
-   SCROLLBAR (retro)
+   SCROLLBAR
    ============================================================ */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: var(--retro-cream); border-left: 2px solid #000; }
@@ -149,7 +123,7 @@ select.retro-select, select.retro-select-sm {
 ::-webkit-scrollbar-thumb:hover { background: var(--retro-pink); }
 
 /* ============================================================
-   CREAMY CANVAS (with retro dot pattern)
+   CREAMY CANVAS
    ============================================================ */
 .creamy-canvas {
   background-color: var(--cream-bg);
@@ -159,15 +133,15 @@ select.retro-select, select.retro-select-sm {
 }
 
 /* ============================================================
-   PHOTO FRAME BACKGROUND
+   PHOTO FRAME BACKGROUND (blurred photo will cover this)
    ============================================================ */
 .photo-frame-bg {
-  background:
-    repeating-linear-gradient(45deg, #0A0A0A 0, #0A0A0A 10px, #1A1A2E 10px, #1A1A2E 20px);
+  background: #0A0A0A;
+  position: relative;
 }
 
 /* ============================================================
-   VHS SCANLINES OVERLAY
+   VHS SCANLINES
    ============================================================ */
 .scanlines {
   position: fixed;
@@ -204,8 +178,8 @@ select.retro-select, select.retro-select-sm {
    LETTER ANIMATIONS
    ============================================================ */
 @keyframes letterFadeIn {
-  0% { opacity: 0; transform: translateY(12px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% { opacity: 0; transform: translateY(12px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes letterSlideUp {
   0% { opacity: 0; transform: translateY(35px); }
@@ -254,13 +228,10 @@ select.retro-select, select.retro-select-sm {
   50% { opacity: 0; }
 }
 
-/* ============================================================
-   UTILITY: border-3
-   ============================================================ */
 .border-3 { border-width: 3px; }
 
 /* ============================================================
-   ✅ NEW: CANVAS BACKGROUND COLOR SWATCHES
+   CANVAS BACKGROUND COLOR SWATCHES
    ============================================================ */
 .canvas-swatch {
   width: 100%;
@@ -271,19 +242,13 @@ select.retro-select, select.retro-select-sm {
   box-shadow: 2px 2px 0 0 #000;
   transition: all 0.1s ease;
 }
-
-.canvas-swatch:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 0 #000;
-}
-
+.canvas-swatch:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 0 #000; }
 .canvas-swatch.active {
   transform: translate(-2px, -2px);
   box-shadow: 4px 4px 0 0 #000;
   outline: 3px solid var(--retro-red);
   outline-offset: -6px;
 }
-
 .canvas-swatch.active::after {
   content: '✓';
   position: absolute;
@@ -294,9 +259,20 @@ select.retro-select, select.retro-select-sm {
   color: #000;
   font-weight: 900;
   font-size: 14px;
-  text-shadow:
-    1px 1px 0 #fff,
-    -1px -1px 0 #fff,
-    1px -1px 0 #fff,
-    -1px 1px 0 #fff;
+  text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
+}
+
+/* ============================================================
+   ✅ FULLSCREEN AUTO-HIDE CONTROLS
+   ============================================================ */
+.presentation-idle #playerTopBar,
+.presentation-idle #playerProgressBar,
+.presentation-idle #prevSlideBtn,
+.presentation-idle #nextSlideBtn {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+#playerTopBar, #playerProgressBar, #prevSlideBtn, #nextSlideBtn {
+  transition: opacity 0.3s ease;
 }
