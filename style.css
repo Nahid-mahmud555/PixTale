@@ -1,0 +1,67 @@
+:root {
+  --cream-bg: #FAF8F5;
+  --cream-card: #FFFFFF;
+  --cream-border: #E8E2D9;
+  --cream-text-dark: #1C1917;
+  --cream-text-muted: #78716C;
+  --accent: #D97706;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #090D16;
+  color: #F8FAFC;
+}
+
+.font-sans-clean { font-family: 'Inter', sans-serif; }
+.font-serif-elegant { font-family: 'Playfair Display', serif; }
+.font-handwriting { font-family: 'Caveat', cursive; }
+.font-modern-display { font-family: 'Space Grotesk', sans-serif; }
+.font-cinzel { font-family: 'Cinzel', serif; }
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track { background: #1E293B; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+@keyframes wordFadeIn {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes wordSlideUp {
+  0% { opacity: 0; transform: translateY(35px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes wordBounce {
+  0% { opacity: 0; transform: translateY(-30px); }
+  60% { transform: translateY(8px); }
+  80% { transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes wordGlow {
+  0% { opacity: 0; filter: blur(12px); transform: scale(0.85); }
+  100% { opacity: 1; filter: blur(0); transform: scale(1); }
+}
+
+.anim-word-fade { display: inline-block; opacity: 0; animation: wordFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.anim-word-slide { display: inline-block; opacity: 0; animation: wordSlideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.anim-word-bounce { display: inline-block; opacity: 0; animation: wordBounce 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.anim-word-glow { display: inline-block; opacity: 0; animation: wordGlow 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+.typewriter-cursor::after {
+  content: '|';
+  animation: blink 0.7s infinite;
+  color: var(--accent);
+  font-weight: bold;
+  margin-left: 2px;
+}
+
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+.creamy-canvas {
+  background-color: var(--cream-bg);
+  background-image: radial-gradient(#E2DCD2 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+}
