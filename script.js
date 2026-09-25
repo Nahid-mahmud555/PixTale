@@ -258,7 +258,7 @@ class AudioSynthesizer {
       gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
 
       osc.connect(gain);
-      osc.connect && gain.connect(this.masterGain);
+      gain.connect(this.masterGain);
       osc.start(start);
       osc.stop(start + 0.3);
     });
@@ -755,6 +755,7 @@ function resetPreview() {
   previewImageBlur.classList.add('hidden');
   previewImagePlaceholder.classList.remove('hidden');
   previewTextContainer.innerHTML = '<span class="text-black/40 italic text-sm font-mono-retro">SELECT A SLIDE...</span>';
+  previewTextContainer.style.transform = 'translateY(0)';
   applyCanvasBg('#FAF8F5');
 }
 
@@ -775,39 +776,41 @@ function updateLivePreview(slide) {
 }
 
 /* ============================================================
-   PER-LETTER ANIMATION ENGINE
-   ✅ Fullscreen safe — text always inside frame
-   ✅ Word wrap, no overflow, no scroll
-   ✅ Auto font shrink if too long
+   🎬 PER-LETTER ANIMATION ENGINE
+   ✅ Line-by-line typewriter
+   ✅ Smart auto-scroll (like Notepad / VS Code)
+   ✅ Newest line always visible
+   ✅ Smooth scroll — no jump
    ============================================================ */
 function renderAnimatedText(slide, container) {
   if (typewriterTimeout) clearTimeout(typewriterTimeout);
   letterTimeouts.forEach(t => clearTimeout(t));
   letterTimeouts = [];
 
-  // Parent canvas — safe bounds
+  // Parent canvas — bounds enforce
   const parentCanvas = container.closest('.creamy-canvas');
   if (parentCanvas) {
     parentCanvas.style.overflow = 'hidden';
     parentCanvas.style.position = 'relative';
     parentCanvas.style.display = 'flex';
     parentCanvas.style.flexDirection = 'column';
-    parentCanvas.style.justifyContent = 'center';
+    parentCanvas.style.justifyContent = 'flex-start';
     parentCanvas.style.alignItems = 'center';
+    parentCanvas.style.boxSizing = 'border-box';
   }
 
+  // Container reset
   container.innerHTML = '';
   container.className = `w-full ${slide.alignment} ${slide.fontFamily} ${slide.fontSize} leading-relaxed tracking-tight`;
   container.style.color = slide.textColor;
-  container.style.transform = 'none';
-  container.style.transition = 'none';
-  container.style.maxHeight = '100%';
+  container.style.transform = 'translateY(0px)';
+  container.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
   container.style.maxWidth = '100%';
-  container.style.overflow = 'hidden';
   container.style.wordBreak = 'break-word';
   container.style.overflowWrap = 'break-word';
-  container.style.padding = '0 4px';
+  container.style.padding = '0';
   container.style.boxSizing = 'border-box';
+  container.style.willChange = 'transform';
 
   const text = slide.text;
   if (!text.trim()) {
@@ -817,11 +820,27 @@ function renderAnimatedText(slide, container) {
 
   const lines = text.split('\n');
 
+  // ✅ Helper: keep newest line visible by scrolling up
+  function keepNewestVisible() {
+    if (!parentCanvas) return;
+    const visibleH = parentCanvas.clientHeight;
+    const contentH = container.scrollHeight;
+    const bottomPadding = 30;
+
+    if (contentH > visibleH - bottomPadding) {
+      const overflow = contentH - visibleH + bottomPadding;
+      container.style.transform = `translateY(-${overflow}px)`;
+    } else {
+      container.style.transform = 'translateY(0px)';
+    }
+  }
+
   // ═══ TYPEWRITER MODE ═══
   if (slide.animation === 'typewriter') {
     const textSpan = document.createElement('span');
     textSpan.style.wordBreak = 'break-word';
     textSpan.style.overflowWrap = 'break-word';
+    textSpan.style.whiteSpace = 'pre-wrap';
     const cursorSpan = document.createElement('span');
     cursorSpan.className = 'typewriter-cursor';
     container.appendChild(textSpan);
@@ -839,6 +858,10 @@ function renderAnimatedText(slide, container) {
           if (char !== ' ') soundFx.playTypewriterKey();
         }
         charIndex++;
+
+        // ✅ Smooth auto-scroll after each char
+        keepNewestVisible();
+
         typewriterTimeout = setTimeout(typeChar, 50);
       } else {
         typewriterTimeout = setTimeout(() => cursorSpan.remove(), 2000);
@@ -896,7 +919,20 @@ function renderAnimatedText(slide, container) {
     globalLetterIndex++;
   });
 
-  // Sound sync
+  // ✅ Auto-scroll during animation
+  const totalDuration = globalLetterIndex * 50 + 800;
+  const startTime = performance.now();
+  let scrollRAF = null;
+
+  function scrollLoop(now) {
+    keepNewestVisible();
+    if (now - startTime < totalDuration) {
+      scrollRAF = requestAnimationFrame(scrollLoop);
+    }
+  }
+  scrollRAF = requestAnimationFrame(scrollLoop);
+
+  // Sound sync per letter
   let soundIndex = 0;
   lines.forEach((line) => {
     line.split(' ').forEach((word) => {
@@ -1366,7 +1402,6 @@ function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
     let cursorX = textX;
     if (slide.alignment === 'text-center') cursorX = textX - lineWidth / 2;
 
-    // Process each char in the wrapped line
     for (let i = 0; i < lineText.length; i++) {
       const char = lineText[i];
       let charProgress = 1;
