@@ -128,30 +128,44 @@ select.retro-select, select.retro-select-sm {
 ::-webkit-scrollbar-thumb { background: var(--retro-red); border: 2px solid #000; }
 ::-webkit-scrollbar-thumb:hover { background: var(--retro-pink); }
 
+/* Hide scrollbar on elements that use JS-driven auto-scroll (the text canvas) */
+.no-scrollbar {
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* IE / old Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;              /* Chrome / Safari / new Edge */
+  width: 0;
+  height: 0;
+}
+
 /* ============================================================
-   ✅ CREAMY CANVAS — text always inside frame
+   ✅ CREAMY CANVAS — now a proper auto-scrolling "terminal"
+   Text is free to grow; THIS element scrolls & clips it, and
+   JS keeps it pinned to the newest line as text is typed.
    ============================================================ */
 .creamy-canvas {
   background-color: var(--cream-bg);
   background-image: radial-gradient(#C9BFA8 1.5px, transparent 1.5px);
   background-size: 18px 18px;
   transition: background-color 0.3s ease;
-  overflow: hidden !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   box-sizing: border-box !important;
+  scroll-behavior: smooth;
 }
 
-/* Text container — always fit within bounds */
+/* Text container — grows naturally with content; the PARENT
+   (.creamy-canvas) is what scrolls/clips it, not this element. */
 #previewTextContainer,
 #playerTextContainer {
-  max-height: 100% !important;
+  width: 100%;
   max-width: 100% !important;
-  overflow: hidden !important;
+  flex-shrink: 0;
   word-wrap: break-word !important;
   overflow-wrap: break-word !important;
   word-break: break-word !important;
   box-sizing: border-box !important;
-  transform: none !important;
-  transition: none !important;
 }
 
 #previewTextContainer *,
@@ -292,23 +306,25 @@ select.retro-select, select.retro-select-sm {
 }
 
 /* ============================================================
-   ✅ FULLSCREEN PRESENTATION — text scaling fix
+   ✅ FULLSCREEN PRESENTATION — same scrollable "terminal" canvas
    ============================================================ */
 #presentationModal .creamy-canvas {
-  overflow: hidden !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: flex-start !important;
+  justify-content: center !important;
   align-items: center !important;
   padding: 24px 32px !important;
+  scroll-behavior: smooth;
 }
 
 #presentationModal #playerTextContainer {
-  max-height: 100% !important;
+  width: 100%;
   max-width: 100% !important;
-  overflow: hidden !important;
-  margin: auto 0 !important;
+  flex-shrink: 0;
+  margin: 0 !important;
   padding: 0 !important;
   word-break: break-word !important;
   overflow-wrap: break-word !important;
