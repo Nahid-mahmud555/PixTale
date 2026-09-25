@@ -1,9 +1,11 @@
 /* ============================================================
-   AUDIO SYNTHESIZER - Web Audio API diye sound generate
+   🎬 PROFESSIONAL SOUND SYNTHESIZER
+   Video editor style: pop, click, whoosh, tick, swoosh
    ============================================================ */
 class AudioSynthesizer {
   constructor() {
     this.ctx = null;
+    this.masterGain = null;
     this.soundEnabled = true;
   }
 
@@ -11,76 +13,255 @@ class AudioSynthesizer {
     if (!this.ctx) {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       this.ctx = new AudioContext();
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.value = 0.6;
+      this.masterGain.connect(this.ctx.destination);
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
   }
 
-  // Typewriter key click sound (protita letter er jonno)
+  // ══════════════════════════════════════════════════════════
+  // 🎯 TYPEWRITER CLICK — Mechanical keyboard key tap
+  // (CapCut / Premiere style: crisp, short, clicky)
+  // ══════════════════════════════════════════════════════════
   playTypewriterKey() {
     if (!this.soundEnabled) return;
     this.init();
+    const now = this.ctx.currentTime;
 
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+    // Layer 1: High click (metallic)
+    const click = this.ctx.createOscillator();
+    const clickGain = this.ctx.createGain();
+    click.type = 'square';
+    click.frequency.setValueAtTime(2400 + Math.random() * 600, now);
+    click.frequency.exponentialRampToValueAtTime(800, now + 0.015);
+    clickGain.gain.setValueAtTime(0.09, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+    click.connect(clickGain);
+    clickGain.connect(this.masterGain);
+    click.start(now);
+    click.stop(now + 0.02);
 
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(600 + Math.random() * 400, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.03);
+    // Layer 2: Body thump (low meaty part)
+    const thump = this.ctx.createOscillator();
+    const thumpGain = this.ctx.createGain();
+    thump.type = 'triangle';
+    thump.frequency.setValueAtTime(180 + Math.random() * 60, now);
+    thump.frequency.exponentialRampToValueAtTime(60, now + 0.025);
+    thumpGain.gain.setValueAtTime(0.06, now);
+    thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+    thump.connect(thumpGain);
+    thumpGain.connect(this.masterGain);
+    thump.start(now);
+    thump.stop(now + 0.03);
 
-    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.03);
-
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.03);
+    // Layer 3: Noise burst (key release texture)
+    const noise = this.ctx.createBufferSource();
+    const noiseBuffer = this.ctx.createBuffer(1, 800, this.ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < 800; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / 800, 3);
+    }
+    noise.buffer = noiseBuffer;
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.05, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 2000;
+    noise.connect(hp);
+    hp.connect(noiseGain);
+    noiseGain.connect(this.masterGain);
+    noise.start(now);
+    noise.stop(now + 0.02);
   }
 
-  // Letter swoosh sound (onno animation er jonno)
-  playLetterSwoosh() {
+  // ══════════════════════════════════════════════════════════
+  // 🎯 LETTER POP — Cute candy-pop sound
+  // (For fade/slide/bounce/glow animation letters)
+  // ══════════════════════════════════════════════════════════
+  playLetterPop() {
     if (!this.soundEnabled) return;
     this.init();
+    const now = this.ctx.currentTime;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
-
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(220, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(440, this.ctx.currentTime + 0.08);
+    // Random pitch for organic feel
+    const basePitch = 700 + Math.random() * 500;
+    osc.frequency.setValueAtTime(basePitch, now);
+    osc.frequency.exponentialRampToValueAtTime(basePitch * 2, now + 0.04);
+    osc.frequency.exponentialRampToValueAtTime(basePitch * 0.8, now + 0.09);
 
-    gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.055, now + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.08);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.1);
   }
 
-  // Soft tick sound (fade/slide/bounce/glow er jonno - lighter)
-  playLetterTick() {
+  // ══════════════════════════════════════════════════════════
+  // 🎯 SOFT WHOOSH — For slide transitions
+  // ══════════════════════════════════════════════════════════
+  playWhoosh() {
     if (!this.soundEnabled) return;
     this.init();
+    const now = this.ctx.currentTime;
+
+    const noise = this.ctx.createBufferSource();
+    const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.3, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.sin((i / data.length) * Math.PI);
+    }
+    noise.buffer = buffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(400, now);
+    filter.frequency.exponentialRampToValueAtTime(2000, now + 0.15);
+    filter.frequency.exponentialRampToValueAtTime(600, now + 0.3);
+    filter.Q.value = 2;
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.04, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+    noise.start(now);
+    noise.stop(now + 0.3);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 🎯 SUB BASS THUMP — For bounce animation
+  // ══════════════════════════════════════════════════════════
+  playBounceThump() {
+    if (!this.soundEnabled) return;
+    this.init();
+    const now = this.ctx.currentTime;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
 
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(800 + Math.random() * 200, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + 0.02);
-
-    gain.gain.setValueAtTime(0.03, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.02);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.16);
+  }
 
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.02);
+  // ══════════════════════════════════════════════════════════
+  // 🎯 CINEMATIC SWELL — For glow animation
+  // ══════════════════════════════════════════════════════════
+  playGlowSwell() {
+    if (!this.soundEnabled) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+
+    gain.gain.setValueAtTime(0.04, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.13);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 🎯 SLIDE CHANGE — Big transition whoosh
+  // ══════════════════════════════════════════════════════════
+  playSlideTransition() {
+    if (!this.soundEnabled) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    // Descending swoosh
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(150, now + 0.35);
+    
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2000, now);
+    filter.frequency.exponentialRampToValueAtTime(300, now + 0.35);
+
+    gain.gain.setValueAtTime(0.05, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.36);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 🎯 UI CLICK — Cute UI feedback pop
+  // ══════════════════════════════════════════════════════════
+  playUIClick() {
+    if (!this.soundEnabled) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(1000, now);
+    osc.frequency.exponentialRampToValueAtTime(1500, now + 0.04);
+
+    gain.gain.setValueAtTime(0.05, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.06);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 🎯 SUCCESS CHIME — For slide end / play start
+  // ══════════════════════════════════════════════════════════
+  playSuccessChime() {
+    if (!this.soundEnabled) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    [523.25, 659.25, 783.99].forEach((freq, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+
+      const start = now + i * 0.06;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.06, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(start);
+      osc.stop(start + 0.3);
+    });
   }
 }
 
@@ -158,7 +339,7 @@ function addDemoSlide() {
   const demoSlide = {
     id: 'slide_' + Date.now(),
     imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    text: 'Welcome to PixTale - Create your story.',
+    text: 'Welcome to PixTale — Create your story.',
     animation: 'typewriter',
     fontFamily: 'font-serif-elegant',
     fontSize: 'text-2xl md:text-4xl',
@@ -191,21 +372,26 @@ function setupEventListeners() {
 
   alignBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      alignBtns.forEach(b => b.classList.remove('active', 'bg-slate-800', 'text-amber-400'));
-      btn.classList.add('active', 'bg-slate-800', 'text-amber-400');
+      alignBtns.forEach(b => {
+        b.classList.remove('active', 'bg-retro-yellow');
+      });
+      btn.classList.add('active', 'bg-retro-yellow');
+      soundFx.playUIClick();
       updateActiveSlide();
     });
   });
 
   replayAnimBtn.addEventListener('click', () => {
+    soundFx.playUIClick();
     const slide = getActiveSlide();
     if (slide) renderAnimatedText(slide, previewTextContainer);
   });
 
   soundToggleBtn.addEventListener('click', () => {
     soundFx.soundEnabled = !soundFx.soundEnabled;
-    soundIcon.className = soundFx.soundEnabled ? 'fa-solid fa-volume-high text-amber-400' : 'fa-solid fa-volume-xmark text-slate-500';
-    soundToggleBtn.querySelector('span').textContent = soundFx.soundEnabled ? 'Sound ON' : 'Sound OFF';
+    soundIcon.className = soundFx.soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+    soundToggleBtn.querySelector('span').textContent = soundFx.soundEnabled ? 'SOUND ON' : 'SOUND OFF';
+    if (soundFx.soundEnabled) soundFx.playUIClick();
   });
 
   startPresentationBtn.addEventListener('click', startPresentation);
@@ -226,11 +412,11 @@ function setupEventListeners() {
 function setupMobileTabs() {
   function switchTab(activeTab, showElement) {
     [tabPreviewBtn, tabEditBtn, tabSlidesBtn].forEach(btn => {
-      btn.classList.remove('text-amber-400', 'border-b-2', 'border-amber-500');
-      btn.classList.add('text-slate-400');
+      btn.classList.remove('bg-retro-yellow', 'text-black');
+      btn.classList.add('text-black/60');
     });
-    activeTab.classList.add('text-amber-400', 'border-b-2', 'border-amber-500');
-    activeTab.classList.remove('text-slate-400');
+    activeTab.classList.add('bg-retro-yellow', 'text-black');
+    activeTab.classList.remove('text-black/60');
 
     slidesSidebar.classList.add('hidden');
     customizerPanel.classList.add('hidden');
@@ -238,6 +424,7 @@ function setupMobileTabs() {
 
     showElement.classList.remove('hidden');
     showElement.classList.add('flex');
+    soundFx.playUIClick();
   }
 
   tabPreviewBtn.addEventListener('click', () => switchTab(tabPreviewBtn, previewPanel));
@@ -270,6 +457,7 @@ function handleFileUpload(e) {
       slides.push(newSlide);
       renderSlideList();
       selectSlide(newSlide.id);
+      soundFx.playSuccessChime();
     };
     reader.readAsDataURL(file);
   });
@@ -298,24 +486,24 @@ function renderSlideList() {
 
   slides.forEach((slide, idx) => {
     const slideEl = document.createElement('div');
-    slideEl.className = `group relative p-2 rounded-xl border flex items-center space-x-3 cursor-pointer transition ${
+    slideEl.className = `group relative p-2 border-3 flex items-center space-x-3 cursor-pointer transition ${
       slide.id === activeSlideId
-        ? 'bg-slate-800 border-amber-500/80 shadow-md'
-        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+        ? 'bg-retro-yellow border-black shadow-retro'
+        : 'bg-white border-black hover:bg-retro-cream'
     }`;
 
     slideEl.innerHTML = `
-      <div class="w-10 h-10 rounded-lg bg-slate-900 overflow-hidden shrink-0 border border-slate-700/50">
+      <div class="w-10 h-10 border-2 border-black bg-black overflow-hidden shrink-0">
         <img src="${slide.imageUrl}" class="w-full h-full object-cover object-center">
       </div>
       <div class="flex-1 min-w-0">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-200 truncate">Slide ${idx + 1}</span>
-          <span class="text-[10px] text-amber-400 font-mono">${slide.duration}s</span>
+          <span class="text-xs font-mono-retro font-bold text-black truncate">SLIDE ${idx + 1}</span>
+          <span class="text-[10px] text-black font-mono-retro font-bold bg-retro-pink text-white px-1.5 border border-black">${slide.duration}S</span>
         </div>
-        <p class="text-[11px] text-slate-400 truncate mt-0.5">${slide.text || 'No text'}</p>
+        <p class="text-[11px] text-black/70 truncate mt-0.5 font-mono-retro">${slide.text || 'No text'}</p>
       </div>
-      <button data-delete-id="${slide.id}" class="w-6 h-6 rounded-md bg-slate-900 text-slate-400 hover:text-red-400 transition flex items-center justify-center">
+      <button data-delete-id="${slide.id}" class="w-6 h-6 border-2 border-black bg-retro-red text-white hover:bg-black transition flex items-center justify-center">
         <i class="fa-solid fa-xmark text-xs"></i>
       </button>
     `;
@@ -326,6 +514,7 @@ function renderSlideList() {
         deleteSlide(slide.id);
         return;
       }
+      soundFx.playUIClick();
       selectSlide(slide.id);
     });
 
@@ -344,7 +533,7 @@ function selectSlide(id) {
   if (!slide) return;
 
   enableEditor();
-  activeSlideLabel.textContent = `Slide ${slides.findIndex(s => s.id === id) + 1}`;
+  activeSlideLabel.textContent = `SLIDE ${slides.findIndex(s => s.id === id) + 1}`;
 
   textInput.value = slide.text;
   animationSelect.value = slide.animation;
@@ -357,9 +546,9 @@ function selectSlide(id) {
 
   alignBtns.forEach(btn => {
     if (btn.dataset.align === slide.alignment) {
-      btn.classList.add('active', 'bg-slate-800', 'text-amber-400');
+      btn.classList.add('active', 'bg-retro-yellow');
     } else {
-      btn.classList.remove('active', 'bg-slate-800', 'text-amber-400');
+      btn.classList.remove('active', 'bg-retro-yellow');
     }
   });
 
@@ -391,6 +580,7 @@ function deleteSlide(id) {
   activeSlideId = slides.length > 0 ? slides[0].id : null;
   renderSlideList();
   if (activeSlideId) selectSlide(activeSlideId);
+  soundFx.playWhoosh();
 }
 
 function clearAllSlides() {
@@ -398,21 +588,19 @@ function clearAllSlides() {
   if (confirm('Clear all slides?')) {
     slides = [];
     renderSlideList();
+    soundFx.playWhoosh();
   }
 }
 
 function enableEditor() { editorControlsWrapper.classList.remove('opacity-40', 'pointer-events-none'); }
-function disableEditor() { editorControlsWrapper.classList.add('opacity-40', 'pointer-events-none'); activeSlideLabel.textContent = 'No Selection'; }
+function disableEditor() { editorControlsWrapper.classList.add('opacity-40', 'pointer-events-none'); activeSlideLabel.textContent = 'NO SEL'; }
 
 function resetPreview() {
   previewImage.classList.add('hidden');
   previewImagePlaceholder.classList.remove('hidden');
-  previewTextContainer.innerHTML = '<span class="text-stone-400 italic text-sm">Select a slide to preview...</span>';
+  previewTextContainer.innerHTML = '<span class="text-black/40 italic text-sm font-mono-retro">SELECT A SLIDE...</span>';
 }
 
-/* ============================================================
-   LIVE PREVIEW UPDATE (chobi full frame e sundor vabe)
-   ============================================================ */
 function updateLivePreview(slide) {
   if (!slide) return;
   previewImage.src = slide.imageUrl;
@@ -424,10 +612,9 @@ function updateLivePreview(slide) {
 }
 
 /* ============================================================
-   🎬 PER-LETTER ANIMATION ENGINE (main magic!)
+   🎬 PER-LETTER ANIMATION ENGINE
    ============================================================ */
 function renderAnimatedText(slide, container) {
-  // Age er sob timeout clear koro
   if (typewriterTimeout) clearTimeout(typewriterTimeout);
   letterTimeouts.forEach(t => clearTimeout(t));
   letterTimeouts = [];
@@ -442,7 +629,7 @@ function renderAnimatedText(slide, container) {
     return;
   }
 
-  // ===== TYPEWRITER MODE: letter-by-letter with click sound =====
+  // ═══════ TYPEWRITER MODE (letter-by-letter + click) ═══════
   if (slide.animation === 'typewriter') {
     const textSpan = document.createElement('span');
     const cursorSpan = document.createElement('span');
@@ -455,16 +642,10 @@ function renderAnimatedText(slide, container) {
       if (charIndex < text.length) {
         const char = text.charAt(charIndex);
         textSpan.textContent += char;
-
-        // Protita letter er jonno sound (space er jonno noy)
-        if (char !== ' ') {
-          soundFx.playTypewriterKey();
-        }
-
+        if (char !== ' ') soundFx.playTypewriterKey();
         charIndex++;
         typewriterTimeout = setTimeout(typeChar, 50);
       } else {
-        // Type shesh e cursor remove
         typewriterTimeout = setTimeout(() => cursorSpan.remove(), 2000);
       }
     }
@@ -472,7 +653,7 @@ function renderAnimatedText(slide, container) {
     return;
   }
 
-  // ===== OTHER MODES: protita LETTER alada kore animate =====
+  // ═══════ OTHER MODES (per-letter with synced sounds) ═══════
   const animClassMap = {
     fade: 'anim-letter-fade',
     slide: 'anim-letter-slide',
@@ -481,63 +662,49 @@ function renderAnimatedText(slide, container) {
   };
   const animClass = animClassMap[slide.animation] || 'anim-letter-fade';
 
-  // Text ke word e bhag koro, then protita word ke letter e bhag koro
   const words = text.split(' ');
 
   words.forEach((word, wordIdx) => {
-    // Protita word er jonno ekta wrapper span (jate word break na hoy)
     const wordWrapper = document.createElement('span');
     wordWrapper.className = 'inline-block whitespace-nowrap';
     wordWrapper.style.marginRight = '0.35em';
 
-    // Word er protita letter alada span
     word.split('').forEach((char, charIdx) => {
       const letterSpan = document.createElement('span');
       letterSpan.className = `${animClass} inline-block`;
       letterSpan.textContent = char;
 
-      // Letter er animation delay calculate koro
-      // Protita word er majhe ektu beshi delay, ar word er vitore letter delay
       const globalLetterIndex = getGlobalLetterIndex(words, wordIdx, charIdx);
-      const delay = globalLetterIndex * 0.05; // 50ms per letter
+      const delay = globalLetterIndex * 0.05;
       letterSpan.style.animationDelay = `${delay}s`;
 
       wordWrapper.appendChild(letterSpan);
     });
 
     container.appendChild(wordWrapper);
-
-    // Word shesh e ekta space (visual)
-    const spaceSpan = document.createElement('span');
-    spaceSpan.className = 'inline-block';
-    spaceSpan.innerHTML = '&nbsp;';
-    container.appendChild(spaceSpan);
   });
 
-  // ===== Protita letter er sathe sound sync =====
+  // ═══════ Sound sync per letter (different sound per animation) ═══════
   let globalIndex = 0;
-  words.forEach((word, wordIdx) => {
-    word.split('').forEach((char) => {
-      const delay = globalIndex * 50; // 50ms per letter
-
+  words.forEach((word) => {
+    word.split('').forEach(() => {
+      const delay = globalIndex * 50;
       const timeoutId = setTimeout(() => {
-        // Fade/Slide/Bounce/Glow er jonno soft tick sound
-        soundFx.playLetterTick();
+        if (slide.animation === 'fade') soundFx.playLetterPop();
+        else if (slide.animation === 'slide') soundFx.playWhoosh();
+        else if (slide.animation === 'bounce') soundFx.playBounceThump();
+        else if (slide.animation === 'glow') soundFx.playGlowSwell();
       }, delay);
-
       letterTimeouts.push(timeoutId);
       globalIndex++;
     });
-    globalIndex++; // space er jonno o ekta gap
+    globalIndex++; // space gap
   });
 }
 
-// Helper: global letter index calculate koro (word ar char index theke)
 function getGlobalLetterIndex(words, targetWordIdx, targetCharIdx) {
   let index = 0;
-  for (let i = 0; i < targetWordIdx; i++) {
-    index += words[i].length + 1; // +1 for space
-  }
+  for (let i = 0; i < targetWordIdx; i++) index += words[i].length + 1;
   index += targetCharIdx;
   return index;
 }
@@ -554,6 +721,7 @@ function startPresentation() {
   isPaused = false;
   presentationModal.classList.remove('hidden');
   presentationModal.classList.add('flex');
+  soundFx.playSuccessChime();
   playSlide(presentationIndex);
 }
 
@@ -564,6 +732,7 @@ function stopPresentation() {
   letterTimeouts = [];
   presentationModal.classList.add('hidden');
   presentationModal.classList.remove('flex');
+  soundFx.playWhoosh();
 }
 
 function playSlide(index) {
@@ -576,10 +745,11 @@ function playSlide(index) {
   const slide = slides[index];
   if (!slide) return;
 
-  // Chobi full frame e sundor vabe dekhabe
+  soundFx.playSlideTransition();
+
   playerImage.src = slide.imageUrl;
   playerImage.className = `w-full h-full ${slide.objectFit} object-center`;
-  playerSlideCounter.textContent = `Slide ${index + 1} / ${slides.length}`;
+  playerSlideCounter.textContent = `SLIDE ${index + 1} / ${slides.length}`;
 
   renderAnimatedText(slide, playerTextContainer);
 
@@ -594,7 +764,6 @@ function playSlide(index) {
     const elapsed = Date.now() - startTime;
     const progress = Math.min((elapsed / durationMs) * 100, 100);
     presentationProgressBar.style.width = `${progress}%`;
-
     if (progress >= 100) clearInterval(progressTimer);
   }, 50);
 
@@ -614,6 +783,7 @@ function togglePausePresentation() {
   playerPauseBtn.innerHTML = isPaused
     ? '<i class="fa-solid fa-play text-xs"></i>'
     : '<i class="fa-solid fa-pause text-xs"></i>';
+  soundFx.playUIClick();
 }
 
 function showNextSlide() {
