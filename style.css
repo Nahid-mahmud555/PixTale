@@ -155,6 +155,7 @@ select.retro-select, select.retro-select-sm {
   background-color: var(--cream-bg);
   background-image: radial-gradient(#C9BFA8 1.5px, transparent 1.5px);
   background-size: 18px 18px;
+  transition: background-color 0.3s ease;
 }
 
 /* ============================================================
@@ -257,3 +258,45 @@ select.retro-select, select.retro-select-sm {
    UTILITY: border-3
    ============================================================ */
 .border-3 { border-width: 3px; }
+
+/* ============================================================
+   ✅ NEW: CANVAS BACKGROUND COLOR SWATCHES
+   ============================================================ */
+.canvas-swatch {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 3px solid #000;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 2px 2px 0 0 #000;
+  transition: all 0.1s ease;
+}
+
+.canvas-swatch:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 0 #000;
+}
+
+.canvas-swatch.active {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 0 #000;
+  outline: 3px solid var(--retro-red);
+  outline-offset: -6px;
+}
+
+.canvas-swatch.active::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-weight: 900;
+  font-size: 14px;
+  text-shadow:
+    1px 1px 0 #fff,
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff;
+}
