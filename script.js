@@ -69,7 +69,7 @@ class AudioSynthesizer {
     noise.stop(now + 0.02);
   }
 
-  // ═══ 🎯 CUTE LETTER POP (Fade) ═══
+  // ═══ CUTE LETTER POP (Fade) ═══
   playLetterPop() {
     if (!this.soundEnabled) return;
     this.init();
@@ -87,7 +87,6 @@ class AudioSynthesizer {
     gain.gain.linearRampToValueAtTime(0.05, now + 0.006);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
-    // Add a tiny sparkle layer
     const spark = this.ctx.createOscillator();
     const sparkGain = this.ctx.createGain();
     spark.type = 'triangle';
@@ -106,7 +105,7 @@ class AudioSynthesizer {
     osc.stop(now + 0.09);
   }
 
-  // ═══ 🎯 CUTE SWOOSH (Slide animation) ═══
+  // ═══ CUTE SWOOSH (Slide) ═══
   playWhoosh() {
     if (!this.soundEnabled) return;
     this.init();
@@ -139,7 +138,7 @@ class AudioSynthesizer {
     noise.stop(now + 0.25);
   }
 
-  // ═══ 🎯 CUTE THUMP (Bounce animation) ═══
+  // ═══ CUTE THUMP (Bounce) ═══
   playBounceThump() {
     if (!this.soundEnabled) return;
     this.init();
@@ -154,7 +153,6 @@ class AudioSynthesizer {
     gain.gain.setValueAtTime(0.13, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
 
-    // Add a soft click on top for cuteness
     const click = this.ctx.createOscillator();
     const clickGain = this.ctx.createGain();
     click.type = 'triangle';
@@ -173,7 +171,7 @@ class AudioSynthesizer {
     osc.stop(now + 0.13);
   }
 
-  // ═══ 🎯 CUTE SWELL (Glow animation) ═══
+  // ═══ CUTE SWELL (Glow) ═══
   playGlowSwell() {
     if (!this.soundEnabled) return;
     this.init();
@@ -188,7 +186,6 @@ class AudioSynthesizer {
     gain.gain.setValueAtTime(0.035, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
 
-    // Add a chime harmonic
     const harm = this.ctx.createOscillator();
     const harmGain = this.ctx.createGain();
     harm.type = 'sine';
@@ -361,6 +358,15 @@ const previewPanel = document.getElementById('previewPanel');
 
 const canvasColorGrid = document.getElementById('canvasColorGrid');
 
+// ✅ DOWNLOAD ELEMENTS
+const downloadBtn = document.getElementById('downloadBtn');
+const downloadMenu = document.getElementById('downloadMenu');
+const downloadModal = document.getElementById('downloadModal');
+const downloadTitle = document.getElementById('downloadTitle');
+const downloadStatus = document.getElementById('downloadStatus');
+const downloadProgressFill = document.getElementById('downloadProgressFill');
+const downloadPercent = document.getElementById('downloadPercent');
+
 /* ============================================================
    INIT
    ============================================================ */
@@ -375,7 +381,7 @@ function addDemoSlide() {
   const demoSlide = {
     id: 'slide_' + Date.now(),
     imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-    text: 'Welcome to PixTale — Create your story.',
+    text: 'Welcome to PixTale\nCreate your story.',
     animation: 'typewriter',
     fontFamily: 'font-serif-elegant',
     fontSize: 'text-2xl md:text-4xl',
@@ -462,7 +468,6 @@ function setupEventListeners() {
     if (slide) renderAnimatedText(slide, previewTextContainer);
   });
 
-  // ✅ NEW: Fullscreen preview button
   expandPreviewBtn.addEventListener('click', () => {
     soundFx.playUIClick();
     startPresentation();
@@ -482,6 +487,27 @@ function setupEventListeners() {
   nextSlideBtn.addEventListener('click', showNextSlide);
   clearAllBtn.addEventListener('click', clearAllSlides);
 
+  // ✅ Download menu toggle
+  downloadBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    downloadMenu.classList.toggle('hidden');
+    soundFx.playUIClick();
+  });
+
+  downloadMenu.querySelectorAll('button[data-download]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      downloadMenu.classList.add('hidden');
+      const type = btn.dataset.download;
+      if (type === 'png') handleDownloadPNG();
+      else if (type === 'video') handleDownloadVideo();
+    });
+  });
+
+  document.addEventListener('click', () => {
+    downloadMenu.classList.add('hidden');
+  });
+
   document.addEventListener('keydown', (e) => {
     if (presentationModal.classList.contains('hidden')) return;
     if (e.key === 'Escape') stopPresentation();
@@ -489,7 +515,6 @@ function setupEventListeners() {
     if (e.key === 'ArrowLeft') showPrevSlide();
   });
 
-  // ✅ NEW: Mouse move → show controls (auto-hide)
   presentationModal.addEventListener('mousemove', resetIdleTimer);
   presentationModal.addEventListener('click', resetIdleTimer);
 }
@@ -578,6 +603,8 @@ function renderSlideList() {
         : 'bg-white border-black hover:bg-retro-cream'
     }`;
 
+    const previewText = (slide.text || 'No text').replace(/\n/g, ' ');
+
     slideEl.innerHTML = `
       <div class="w-10 h-10 border-2 border-black bg-black overflow-hidden shrink-0">
         <img src="${slide.imageUrl}" class="w-full h-full object-cover object-center">
@@ -587,7 +614,7 @@ function renderSlideList() {
           <span class="text-xs font-mono-retro font-bold text-black truncate">SLIDE ${idx + 1}</span>
           <span class="text-[10px] text-black font-mono-retro font-bold bg-retro-pink text-white px-1.5 border border-black">${slide.duration}S</span>
         </div>
-        <p class="text-[11px] text-black/70 truncate mt-0.5 font-mono-retro">${slide.text || 'No text'}</p>
+        <p class="text-[11px] text-black/70 truncate mt-0.5 font-mono-retro">${previewText}</p>
       </div>
       <button data-delete-id="${slide.id}" class="w-6 h-6 border-2 border-black bg-retro-red text-white hover:bg-black transition flex items-center justify-center">
         <i class="fa-solid fa-xmark text-xs"></i>
@@ -697,18 +724,13 @@ function resetPreview() {
   applyCanvasBg('#FAF8F5');
 }
 
-/* ============================================================
-   ✅ UPDATE LIVE PREVIEW (with blurred bg + no crop)
-   ============================================================ */
 function updateLivePreview(slide) {
   if (!slide) return;
 
-  // Main image — contain (no crop)
   previewImage.src = slide.imageUrl;
   previewImage.className = `relative w-full h-full ${slide.objectFit} object-center transition-all duration-300 z-10`;
   previewImage.classList.remove('hidden');
 
-  // Blurred background layer
   previewImageBlur.style.backgroundImage = `url('${slide.imageUrl}')`;
   previewImageBlur.classList.remove('hidden');
 
@@ -719,7 +741,7 @@ function updateLivePreview(slide) {
 }
 
 /* ============================================================
-   PER-LETTER ANIMATION ENGINE
+   PER-LETTER ANIMATION ENGINE (with LINE BREAK support)
    ============================================================ */
 function renderAnimatedText(slide, container) {
   if (typewriterTimeout) clearTimeout(typewriterTimeout);
@@ -730,13 +752,16 @@ function renderAnimatedText(slide, container) {
   container.className = `w-full max-w-2xl ${slide.alignment} ${slide.fontFamily} ${slide.fontSize} leading-relaxed tracking-tight`;
   container.style.color = slide.textColor;
 
-  const text = slide.text.trim();
-  if (!text) {
+  const text = slide.text;
+  if (!text.trim()) {
     container.innerHTML = '<span class="opacity-30 italic">(Empty Text)</span>';
     return;
   }
 
-  // TYPEWRITER
+  // ✅ Split by lines to preserve line breaks
+  const lines = text.split('\n');
+
+  // ═══ TYPEWRITER MODE ═══
   if (slide.animation === 'typewriter') {
     const textSpan = document.createElement('span');
     const cursorSpan = document.createElement('span');
@@ -748,8 +773,12 @@ function renderAnimatedText(slide, container) {
     function typeChar() {
       if (charIndex < text.length) {
         const char = text.charAt(charIndex);
-        textSpan.textContent += char;
-        if (char !== ' ') soundFx.playTypewriterKey();
+        if (char === '\n') {
+          textSpan.appendChild(document.createElement('br'));
+        } else {
+          textSpan.appendChild(document.createTextNode(char));
+          if (char !== ' ') soundFx.playTypewriterKey();
+        }
         charIndex++;
         typewriterTimeout = setTimeout(typeChar, 50);
       } else {
@@ -760,7 +789,7 @@ function renderAnimatedText(slide, container) {
     return;
   }
 
-  // OTHER MODES
+  // ═══ OTHER MODES (line-by-line) ═══
   const animClassMap = {
     fade: 'anim-letter-fade',
     slide: 'anim-letter-slide',
@@ -769,55 +798,64 @@ function renderAnimatedText(slide, container) {
   };
   const animClass = animClassMap[slide.animation] || 'anim-letter-fade';
 
-  const words = text.split(' ');
+  let globalLetterIndex = 0;
 
-  words.forEach((word, wordIdx) => {
-    const wordWrapper = document.createElement('span');
-    wordWrapper.className = 'inline-block whitespace-nowrap';
-    wordWrapper.style.marginRight = '0.35em';
+  lines.forEach((line) => {
+    const lineWrapper = document.createElement('div');
+    lineWrapper.className = 'block';
 
-    word.split('').forEach((char, charIdx) => {
-      const letterSpan = document.createElement('span');
-      letterSpan.className = `${animClass} inline-block`;
-      letterSpan.textContent = char;
+    const words = line.split(' ');
 
-      const globalLetterIndex = getGlobalLetterIndex(words, wordIdx, charIdx);
-      const delay = globalLetterIndex * 0.05;
-      letterSpan.style.animationDelay = `${delay}s`;
+    words.forEach((word) => {
+      if (word === '') return;
 
-      wordWrapper.appendChild(letterSpan);
+      const wordWrapper = document.createElement('span');
+      wordWrapper.className = 'inline-block whitespace-nowrap';
+      wordWrapper.style.marginRight = '0.35em';
+
+      word.split('').forEach((char) => {
+        const letterSpan = document.createElement('span');
+        letterSpan.className = `${animClass} inline-block`;
+        letterSpan.textContent = char;
+
+        const delay = globalLetterIndex * 0.05;
+        letterSpan.style.animationDelay = `${delay}s`;
+
+        wordWrapper.appendChild(letterSpan);
+        globalLetterIndex++;
+      });
+
+      lineWrapper.appendChild(wordWrapper);
     });
 
-    container.appendChild(wordWrapper);
+    container.appendChild(lineWrapper);
+    globalLetterIndex++;
   });
 
-  // Sound sync
-  let globalIndex = 0;
-  words.forEach((word) => {
-    word.split('').forEach(() => {
-      const delay = globalIndex * 50;
-      const timeoutId = setTimeout(() => {
-        if (slide.animation === 'fade') soundFx.playLetterPop();
-        else if (slide.animation === 'slide') soundFx.playWhoosh();
-        else if (slide.animation === 'bounce') soundFx.playBounceThump();
-        else if (slide.animation === 'glow') soundFx.playGlowSwell();
-      }, delay);
-      letterTimeouts.push(timeoutId);
-      globalIndex++;
+  // ═══ Sound sync per letter ═══
+  let soundIndex = 0;
+  lines.forEach((line) => {
+    line.split(' ').forEach((word) => {
+      if (word === '') return;
+      word.split('').forEach(() => {
+        const delay = soundIndex * 50;
+        const timeoutId = setTimeout(() => {
+          if (slide.animation === 'fade') soundFx.playLetterPop();
+          else if (slide.animation === 'slide') soundFx.playWhoosh();
+          else if (slide.animation === 'bounce') soundFx.playBounceThump();
+          else if (slide.animation === 'glow') soundFx.playGlowSwell();
+        }, delay);
+        letterTimeouts.push(timeoutId);
+        soundIndex++;
+      });
+      soundIndex++;
     });
-    globalIndex++;
+    soundIndex++;
   });
-}
-
-function getGlobalLetterIndex(words, targetWordIdx, targetCharIdx) {
-  let index = 0;
-  for (let i = 0; i < targetWordIdx; i++) index += words[i].length + 1;
-  index += targetCharIdx;
-  return index;
 }
 
 /* ============================================================
-   ✅ PRESENTATION MODE (with auto-hide controls)
+   PRESENTATION MODE
    ============================================================ */
 function startPresentation() {
   if (!slides.length) {
@@ -857,11 +895,9 @@ function playSlide(index) {
 
   soundFx.playSlideTransition();
 
-  // Main image
   playerImage.src = slide.imageUrl;
   playerImage.className = `relative w-full h-full ${slide.objectFit} object-center z-10`;
 
-  // Blurred bg
   playerImageBlur.style.backgroundImage = `url('${slide.imageUrl}')`;
   playerImageBlur.classList.remove('hidden');
 
@@ -913,9 +949,6 @@ function showPrevSlide() {
   if (presentationIndex - 1 >= 0) playSlide(presentationIndex - 1);
 }
 
-/* ============================================================
-   ✅ AUTO-HIDE CONTROLS (3s idle → hide)
-   ============================================================ */
 function resetIdleTimer() {
   presentationModal.classList.remove('presentation-idle');
   clearTimeout(idleTimer);
@@ -924,4 +957,408 @@ function resetIdleTimer() {
       presentationModal.classList.add('presentation-idle');
     }
   }, 3000);
+}
+
+/* ============================================================
+   ✅ DOWNLOAD: PNG (INSTANT — no wait)
+   ============================================================ */
+async function handleDownloadPNG() {
+  const slide = getActiveSlide();
+  if (!slide) {
+    alert('Please select a slide first.');
+    return;
+  }
+
+  showDownloadModal('EXPORTING PNG', 'Rendering image...');
+  soundFx.playUIClick();
+
+  try {
+    const img = await loadImage(slide.imageUrl);
+    const canvas = document.createElement('canvas');
+    canvas.width = 1280;
+    canvas.height = 720;
+    const ctx = canvas.getContext('2d');
+
+    // progress = 1 means fully rendered (no animation)
+    drawSlideOnCanvas(ctx, canvas.width, canvas.height, img, slide, 1);
+
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pixtale-slide-${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      hideDownloadModal();
+      soundFx.playSuccessChime();
+    }, 'image/png');
+  } catch (err) {
+    console.error('PNG download error:', err);
+    hideDownloadModal();
+    alert('Download failed: ' + err.message);
+  }
+}
+
+/* ============================================================
+   ✅ DOWNLOAD: VIDEO (WebM with animation + sound)
+   ============================================================ */
+async function handleDownloadVideo() {
+  const slide = getActiveSlide();
+  if (!slide) {
+    alert('Please select a slide first.');
+    return;
+  }
+
+  showDownloadModal('EXPORTING VIDEO', 'Recording animation + sound...');
+  soundFx.playUIClick();
+  soundFx.init();
+
+  try {
+    await recordSlideToVideo(slide);
+    hideDownloadModal();
+    soundFx.playSuccessChime();
+  } catch (err) {
+    console.error('Video download error:', err);
+    hideDownloadModal();
+    alert('Video download failed: ' + err.message);
+  }
+}
+
+function showDownloadModal(title, status) {
+  downloadTitle.textContent = title;
+  downloadStatus.textContent = status;
+  downloadProgressFill.style.width = '0%';
+  downloadPercent.textContent = '0%';
+  downloadModal.classList.remove('hidden');
+  downloadModal.classList.add('flex');
+}
+
+function hideDownloadModal() {
+  downloadModal.classList.add('hidden');
+  downloadModal.classList.remove('flex');
+}
+
+function updateDownloadProgress(percent, statusText) {
+  downloadProgressFill.style.width = `${percent}%`;
+  downloadPercent.textContent = `${Math.round(percent)}%`;
+  if (statusText) downloadStatus.textContent = statusText;
+}
+
+async function recordSlideToVideo(slide) {
+  const DURATION = slide.duration * 1000;
+  const WIDTH = 1280;
+  const HEIGHT = 720;
+
+  const img = await loadImage(slide.imageUrl);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  const ctx = canvas.getContext('2d');
+
+  // Audio routing: tap masterGain into a MediaStreamDest
+  const audioDest = soundFx.ctx.createMediaStreamDestination();
+  soundFx.masterGain.connect(audioDest);
+
+  const videoStream = canvas.captureStream(30);
+  const combinedStream = new MediaStream([
+    ...videoStream.getVideoTracks(),
+    ...audioDest.stream.getAudioTracks()
+  ]);
+
+  // Pick supported MIME type
+  let mimeType = 'video/webm;codecs=vp9,opus';
+  if (!MediaRecorder.isTypeSupported(mimeType)) {
+    mimeType = 'video/webm;codecs=vp8,opus';
+  }
+  if (!MediaRecorder.isTypeSupported(mimeType)) {
+    mimeType = 'video/webm';
+  }
+
+  const recorder = new MediaRecorder(combinedStream, {
+    mimeType,
+    videoBitsPerSecond: 5000000
+  });
+
+  const chunks = [];
+  recorder.ondataavailable = (e) => {
+    if (e.data.size > 0) chunks.push(e.data);
+  };
+
+  return new Promise((resolve, reject) => {
+    recorder.onstop = () => {
+      try { soundFx.masterGain.disconnect(audioDest); } catch (e) {}
+
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pixtale-slide-${Date.now()}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      resolve();
+    };
+
+    recorder.onerror = (e) => reject(e.error || new Error('Recorder error'));
+
+    recorder.start();
+
+    const startTime = performance.now();
+
+    // ── Schedule sounds to play during recording ──
+    const lines = slide.text.split('\n');
+    const soundTimeouts = [];
+
+    if (slide.animation === 'typewriter') {
+      for (let i = 0; i < slide.text.length; i++) {
+        const char = slide.text.charAt(i);
+        if (char === '\n' || char === ' ') continue;
+        const delay = i * 50;
+        const tid = setTimeout(() => soundFx.playTypewriterKey(), delay);
+        soundTimeouts.push(tid);
+      }
+    } else {
+      let soundIdx = 0;
+      lines.forEach((line) => {
+        line.split(' ').forEach((word) => {
+          if (word === '') return;
+          word.split('').forEach(() => {
+            const delay = soundIdx * 50;
+            const tid = setTimeout(() => {
+              if (slide.animation === 'fade') soundFx.playLetterPop();
+              else if (slide.animation === 'slide') soundFx.playWhoosh();
+              else if (slide.animation === 'bounce') soundFx.playBounceThump();
+              else if (slide.animation === 'glow') soundFx.playGlowSwell();
+            }, delay);
+            soundTimeouts.push(tid);
+            soundIdx++;
+          });
+          soundIdx++;
+        });
+        soundIdx++;
+      });
+    }
+
+    let lastProgressUpdate = 0;
+
+    function drawFrame() {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(elapsed / DURATION, 1);
+
+      drawSlideOnCanvas(ctx, WIDTH, HEIGHT, img, slide, progress);
+
+      if (elapsed - lastProgressUpdate > 150) {
+        updateDownloadProgress(progress * 100, 'Recording...');
+        lastProgressUpdate = elapsed;
+      }
+
+      if (elapsed >= DURATION) {
+        soundTimeouts.forEach(t => clearTimeout(t));
+        setTimeout(() => {
+          if (recorder.state !== 'inactive') recorder.stop();
+        }, 500);
+        return;
+      }
+      requestAnimationFrame(drawFrame);
+    }
+
+    setTimeout(() => drawFrame(), 150);
+  });
+}
+
+/* ============================================================
+   CANVAS RENDERING (shared by PNG + Video export)
+   progress: 0 → 1  (0 = start of animation, 1 = fully visible)
+   ============================================================ */
+function drawSlideOnCanvas(ctx, W, H, img, slide, progress) {
+  const photoH = H / 2;
+
+  // ── 1. Blurred background ──
+  ctx.save();
+  ctx.filter = 'blur(30px)';
+  drawImageCover(ctx, img, 0, 0, W, photoH);
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(0, 0, W, photoH);
+
+  // ── 2. Main image (contain) ──
+  const imgAspect = img.width / img.height;
+  const frameAspect = W / photoH;
+  let drawW, drawH;
+  if (imgAspect > frameAspect) {
+    drawW = W; drawH = W / imgAspect;
+  } else {
+    drawH = photoH; drawW = photoH * imgAspect;
+  }
+  const drawX = (W - drawW) / 2;
+  const drawY = (photoH - drawH) / 2;
+  ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+  // ── 3. Canvas BG ──
+  ctx.fillStyle = slide.canvasBg || '#FAF8F5';
+  ctx.fillRect(0, photoH, W, H - photoH);
+
+  // Dot pattern
+  ctx.fillStyle = 'rgba(201, 191, 168, 0.5)';
+  for (let x = 0; x < W; x += 18) {
+    for (let y = photoH; y < H; y += 18) {
+      ctx.beginPath();
+      ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // ── 4. Text ──
+  const fontFamilyMap = {
+    'font-serif-elegant': '"Playfair Display", serif',
+    'font-sans-clean': 'Inter, sans-serif',
+    'font-handwriting': '"Caveat", cursive',
+    'font-modern-display': '"Space Grotesk", sans-serif',
+    'font-cinzel': 'Cinzel, serif'
+  };
+  const fontFamily = fontFamilyMap[slide.fontFamily] || 'Inter, sans-serif';
+
+  const sizeMap = {
+    'text-lg md:text-xl': 26,
+    'text-xl md:text-2xl': 36,
+    'text-2xl md:text-4xl': 52,
+    'text-3xl md:text-5xl': 68
+  };
+  const fontSize = sizeMap[slide.fontSize] || 52;
+
+  ctx.fillStyle = slide.textColor || '#1C1917';
+  ctx.font = `${fontSize}px ${fontFamily}`;
+  ctx.textBaseline = 'middle';
+
+  let textX = W / 2;
+  ctx.textAlign = 'center';
+  if (slide.alignment === 'text-left') { textX = 60; ctx.textAlign = 'left'; }
+  else if (slide.alignment === 'text-right') { textX = W - 60; ctx.textAlign = 'right'; }
+
+  const lineHeight = fontSize * 1.5;
+  const lines = slide.text.split('\n');
+  const totalTextH = lines.length * lineHeight;
+  const textAreaCenterY = photoH + (H - photoH) / 2;
+  let currentY = textAreaCenterY - totalTextH / 2 + lineHeight / 2;
+
+  const letterDelay = 50; // ms
+  const letterDuration = 0.45; // sec
+  const currentTimeSec = progress * slide.duration;
+
+  // Global letter index across all lines
+  let charGlobalIdx = 0;
+
+  lines.forEach((line) => {
+    const words = line.split(' ');
+    const lineWidth = ctx.measureText(line).width;
+    let cursorX = textX;
+    if (slide.alignment === 'text-center') cursorX = textX - lineWidth / 2;
+
+    let firstWordOfLine = true;
+
+    words.forEach((word) => {
+      if (!firstWordOfLine) cursorX += ctx.measureText(' ').width;
+      firstWordOfLine = false;
+
+      word.split('').forEach((char) => {
+        let charProgress = 1;
+
+        if (progress < 1 || slide.animation !== 'typewriter') {
+          const charStartTime = (charGlobalIdx * letterDelay) / 1000;
+          const charEndTime = charStartTime + letterDuration;
+          if (currentTimeSec < charStartTime) charProgress = 0;
+          else if (currentTimeSec > charEndTime) charProgress = 1;
+          else charProgress = (currentTimeSec - charStartTime) / letterDuration;
+        }
+
+        let eased = charProgress;
+        if (slide.animation === 'fade' || slide.animation === 'slide' || slide.animation === 'glow') {
+          eased = easeOutCubic(charProgress);
+        } else if (slide.animation === 'bounce') {
+          eased = easeOutBack(charProgress);
+        }
+
+        const charWidth = ctx.measureText(char).width;
+
+        if (slide.animation === 'typewriter') {
+          const revealUpTo = currentTimeSec / (letterDelay / 1000);
+          const visibleChars = Math.floor(revealUpTo);
+          if (charGlobalIdx < visibleChars) {
+            ctx.globalAlpha = 1;
+            ctx.fillText(char, cursorX, currentY);
+          }
+        } else {
+          ctx.save();
+          ctx.globalAlpha = eased;
+
+          if (slide.animation === 'slide') {
+            const offsetY = (1 - eased) * 40;
+            ctx.fillText(char, cursorX, currentY + offsetY);
+          } else if (slide.animation === 'bounce') {
+            const offsetY = (1 - eased) * -30;
+            const scale = 0.7 + eased * 0.3;
+            ctx.translate(cursorX + charWidth / 2, currentY);
+            ctx.scale(scale, scale);
+            ctx.fillText(char, -charWidth / 2, 0);
+          } else if (slide.animation === 'glow') {
+            ctx.shadowColor = slide.textColor;
+            ctx.shadowBlur = (1 - eased) * 25;
+            ctx.fillText(char, cursorX, currentY);
+          } else {
+            ctx.fillText(char, cursorX, currentY);
+          }
+
+          ctx.restore();
+        }
+
+        cursorX += charWidth;
+        charGlobalIdx++;
+      });
+    });
+
+    currentLineY: currentY += lineHeight;
+    charGlobalIdx++; // line break counts as one
+  });
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Image load failed'));
+    img.src = src;
+  });
+}
+
+function drawImageCover(ctx, img, x, y, w, h) {
+  const imgAspect = img.width / img.height;
+  const frameAspect = w / h;
+  let drawW, drawH;
+  if (imgAspect > frameAspect) {
+    drawH = h; drawW = h * imgAspect;
+  } else {
+    drawW = w; drawH = w / imgAspect;
+  }
+  const dx = x + (w - drawW) / 2;
+  const dy = y + (h - drawH) / 2;
+  ctx.drawImage(img, dx, dy, drawW, drawH);
+}
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function easeOutBack(t) {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
 }
