@@ -328,8 +328,10 @@ select.retro-select, select.retro-select-sm {
   padding: 0 !important;
   word-break: break-word !important;
   overflow-wrap: break-word !important;
-  /* Auto-shrink font on smaller fullscreen */
-  font-size: clamp(0.9em, 2.5vw, 1.6em) !important;
+  /* No forced font-size here anymore — the container's own
+     fontSize class (Small/Medium/Large/XL, set from the editor)
+     controls the size, so fullscreen matches the live preview
+     instead of always shrinking. */
 }
 
 #presentationModal #playerTextContainer * {
