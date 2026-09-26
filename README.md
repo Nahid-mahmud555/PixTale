@@ -39,6 +39,16 @@ Moving forward, **all upcoming social media and tech videos, teasers, and conten
 
 ---
 
+## 📸 PixTale Interface Previews
+
+Here is a quick look at how **PixTale** handles slide customization and live previews:
+
+### 1. Active Working Interface (Slide Management & Live Preview)
+![PixTale Editor Interface](6177245797787833196.jpg)
+
+### 2. Initial / Empty State View
+![PixTale Empty State](6177245797787833241.jpg)
+
 ## 🌐 Connect & Feedback
 
 Built with passion by **Nahid Mahmud** ([nahid-mahmud555](https://github.com/nahid-mahmud555)). 
