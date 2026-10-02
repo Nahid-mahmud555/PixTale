@@ -294,6 +294,10 @@ let typewriterTimeout = null;
 let letterTimeouts = [];
 let idleTimer = null;
 
+// ✅ "Use As Default For New Slides" feature
+let useSlideDefaults = false;
+let slideDefaultsTemplate = null;
+
 /* ============================================================
    DOM ELEMENTS
    ============================================================ */
@@ -346,6 +350,8 @@ const customizerPanel = document.getElementById('customizerPanel');
 const previewPanel = document.getElementById('previewPanel');
 
 const canvasColorGrid = document.getElementById('canvasColorGrid');
+const useAsDefaultCheckbox = document.getElementById('useAsDefaultCheckbox');
+const defaultStyleStatus = document.getElementById('defaultStyleStatus');
 
 const downloadBtn = document.getElementById('downloadBtn');
 const downloadMenu = document.getElementById('downloadMenu');
@@ -411,6 +417,7 @@ function renderCanvasColorSwatches() {
       swatch.classList.add('active');
 
       updateLivePreview(slide);
+      if (useSlideDefaults) captureDefaultTemplate(slide);
     });
 
     canvasColorGrid.appendChild(swatch);
@@ -423,6 +430,45 @@ function applyCanvasBg(color) {
   if (previewCanvas) previewCanvas.style.backgroundColor = bgColor;
   const playerCanvas = playerTextContainer.closest('.creamy-canvas');
   if (playerCanvas) playerCanvas.style.backgroundColor = bgColor;
+}
+
+/* ============================================================
+   ✅ "USE AS DEFAULT FOR NEW SLIDES"
+   Captures the given slide's STYLE (not its text/image) as a
+   template. Whenever the checkbox is on, every style edit made
+   to the active slide re-captures this template, and every new
+   slide created afterwards (via upload) starts with it.
+   ============================================================ */
+function captureDefaultTemplate(slide) {
+  if (!slide) return;
+  slideDefaultsTemplate = {
+    animation: slide.animation,
+    fontFamily: slide.fontFamily,
+    fontSize: slide.fontSize,
+    alignment: slide.alignment,
+    textColor: slide.textColor,
+    duration: slide.duration,
+    durationMode: slide.durationMode,
+    objectFit: slide.objectFit,
+    canvasBg: slide.canvasBg
+  };
+}
+
+function getNewSlideStyleDefaults() {
+  if (useSlideDefaults && slideDefaultsTemplate) {
+    return { ...slideDefaultsTemplate };
+  }
+  return {
+    animation: 'typewriter',
+    fontFamily: 'font-serif-elegant',
+    fontSize: 'text-2xl md:text-4xl',
+    alignment: 'text-center',
+    textColor: '#1C1917',
+    duration: 5,
+    durationMode: 'auto',
+    objectFit: 'object-contain',
+    canvasBg: '#FAF8F5'
+  };
 }
 
 /* ============================================================
@@ -476,6 +522,19 @@ function setupEventListeners() {
     soundIcon.className = soundFx.soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
     soundToggleBtn.querySelector('span').textContent = soundFx.soundEnabled ? 'SOUND ON' : 'SOUND OFF';
     if (soundFx.soundEnabled) soundFx.playUIClick();
+  });
+
+  useAsDefaultCheckbox.addEventListener('change', () => {
+    useSlideDefaults = useAsDefaultCheckbox.checked;
+    soundFx.playUIClick();
+
+    if (useSlideDefaults) {
+      const slide = getActiveSlide();
+      if (slide) captureDefaultTemplate(slide);
+      defaultStyleStatus.classList.remove('hidden');
+    } else {
+      defaultStyleStatus.classList.add('hidden');
+    }
   });
 
   startPresentationBtn.addEventListener('click', startPresentation);
@@ -549,19 +608,13 @@ function handleFileUpload(e) {
   files.forEach(file => {
     const reader = new FileReader();
     reader.onload = (event) => {
+      const styleDefaults = getNewSlideStyleDefaults();
+
       const newSlide = {
         id: 'slide_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
         imageUrl: event.target.result,
         text: 'Your caption or quote goes here...',
-        animation: 'typewriter',
-        fontFamily: 'font-serif-elegant',
-        fontSize: 'text-2xl md:text-4xl',
-        alignment: 'text-center',
-        textColor: '#1C1917',
-        duration: 5,
-        durationMode: 'auto',
-        objectFit: 'object-contain',
-        canvasBg: '#FAF8F5'
+        ...styleDefaults
       };
       slides.push(newSlide);
       renderSlideList();
@@ -728,6 +781,7 @@ function updateActiveSlide() {
   if (activeAlignBtn) slide.alignment = activeAlignBtn.dataset.align;
 
   updateLivePreview(slide);
+  if (useSlideDefaults) captureDefaultTemplate(slide);
 }
 
 function deleteSlide(id) {
