@@ -120,6 +120,17 @@
       </div>
 
       <div id="editorControlsWrapper" class="space-y-5 opacity-40 pointer-events-none transition">
+
+        <div class="bg-retro-yellow border-3 border-black shadow-retro p-3">
+          <label for="useAsDefaultCheckbox" class="flex items-center gap-2.5 cursor-pointer select-none">
+            <input type="checkbox" id="useAsDefaultCheckbox" class="retro-checkbox shrink-0">
+            <span class="text-[11px] font-mono-retro font-bold text-black uppercase leading-tight">Use As Default For New Slides</span>
+          </label>
+          <p id="defaultStyleStatus" class="hidden text-[10px] font-mono-retro font-bold text-black/70 mt-1.5 pl-[30px]">
+            <i class="fa-solid fa-check-circle"></i> This style auto-applies to every new slide
+          </p>
+        </div>
+
         <div class="space-y-2">
           <label class="text-xs font-mono-retro font-bold text-black uppercase">▸ Bottom Canvas Text</label>
           <textarea id="textInput" rows="3" class="retro-input" placeholder="Type text here..."></textarea>
