@@ -274,6 +274,42 @@ select.retro-select, select.retro-select-sm {
 .border-3 { border-width: 3px; }
 
 /* ============================================================
+   RETRO CHECKBOX (Use As Default For New Slides)
+   ============================================================ */
+.retro-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  background: #fff;
+  border: 3px solid #000;
+  box-shadow: 2px 2px 0 0 #000;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.1s ease;
+}
+.retro-checkbox:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 0 #000;
+}
+.retro-checkbox:checked {
+  background: var(--retro-red);
+}
+.retro-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* ============================================================
    CANVAS BACKGROUND COLOR SWATCHES
    ============================================================ */
 .canvas-swatch {
